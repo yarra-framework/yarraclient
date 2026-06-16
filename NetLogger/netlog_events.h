@@ -9,7 +9,7 @@
 #define NETLOG_POST_TIMEOUT     30000
 #define NETLOG_EVENT_TIMEOUT    5000
 #define NETLOG_NSLOOKUP_TIMEOUT 10000
-
+#include <iostream>
 
 // Event definitions
 namespace EventInfo

@@ -11,3 +11,6 @@ The source is released under the GNU General Public License, GPL (http://www.gnu
 
 ## More Information
 More information can be found on the project website https://yarra-framework.org.
+
+## Building
+See [BUILD.md](BUILD.md)

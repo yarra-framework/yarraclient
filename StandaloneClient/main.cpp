@@ -1,6 +1,6 @@
 #include "sac_mainwindow.h"
 #include <QtCore>
-#include <QtGUI>
+#include <QtGui>
 #include <QApplication>
 #include <QStyleFactory>
 #include "sac_batchdialog.h"

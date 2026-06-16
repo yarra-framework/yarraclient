@@ -52,7 +52,16 @@ bool rdsExecHelper::run(QString cmdLine, QString nativeArguments)
     ti.start();
     timeoutTimer.start();
     if (!nativeArguments.isEmpty()){
+        // https://www.qthub.com/static/doc/qt5/qtcore/qprocess.html#setNativeArguments
+        // > Note: This function is available only on the Windows platform.
+        // 2025-06-15 debian Qt 5.15.8
+        // error: ‘class QProcess’ has no member named ‘setNativeArguments’; did you mean ‘setArguments’?
+        #ifdef Q_OS_WIN
         myProcess->setNativeArguments(nativeArguments);
+        #else
+        // splitting on space is going to be a problem for e.g. "quoted arguments with space"!
+        myProcess->setArguments(nativeArguments.split(' '));
+        #endif
     }
 //    else {
 //        myProcess->start(cmdLine, arguments);
