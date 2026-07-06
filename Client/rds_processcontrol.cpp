@@ -147,14 +147,22 @@ void rdsProcessControl::performUpdate()
     // scanner
     // TODO: Resolve compiler warning
 
-    if (diskSpace < qint64(RDS_DISKLIMIT_ALTERNATING))
+    qint64 alternatingDiskLimit=(RTI_CONFIG->netAlternatingDiskLimitGb > 0.0)
+        ? qint64(RTI_CONFIG->netAlternatingDiskLimitGb * 1000000000.0)
+        : qint64(RDS_DISKLIMIT_ALTERNATING);
+
+    qint64 warningDiskLimit=(RTI_CONFIG->netWarningDiskLimitGb > 0.0)
+        ? qint64(RTI_CONFIG->netWarningDiskLimitGb * 1000000000.0)
+        : qint64(RDS_DISKLIMIT_WARNING);
+
+    if (diskSpace < alternatingDiskLimit)
     {
         alternatingUpdate=true;
         RTI->log("Using alternating update mode due to low disk space.");
         RTI_NETLOG.postEvent(EventInfo::Type::Update, EventInfo::Detail::LowDiskSpace, EventInfo::Severity::Warning, "Using alternating update mode");
     }
 
-    if (diskSpace < qint64(RDS_DISKLIMIT_WARNING))
+    if (diskSpace < warningDiskLimit)
     {
         RTI->log("");
         RTI->log("WARNING: Available disk space is very low (< 3 Gb).");

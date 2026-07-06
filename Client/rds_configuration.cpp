@@ -79,6 +79,12 @@ void rdsConfiguration::loadConfiguration()
     // to the network drive failed for three times
     netDriveStartupCmdsAfterFail=settings.value("Network/DriveStartupCmdsAfterFail",false).toBool();
 
+    // Hidden options for overriding the default disk-space thresholds (in GB)
+    // that trigger the alternating update mode and the low-disk-space warning.
+    // A value of 0 means the built-in default (RDS_DISKLIMIT_ALTERNATING/_WARNING) is used.
+    netAlternatingDiskLimitGb=settings.value("Network/AlternatingDiskLimitGb", 0.0).toDouble();
+    netWarningDiskLimitGb    =settings.value("Network/WarningDiskLimitGb",     0.0).toDouble();
+
     logServerPath          =settings.value("LogServer/ServerPath",         "").toString();
     logApiKey              =settings.value("LogServer/ApiKey",             "").toString();
     logSendScanInfo        =settings.value("LogServer/SendScanInfo",       true).toBool();
@@ -188,6 +194,8 @@ void rdsConfiguration::saveConfiguration()
     settings.setValue("Network/DriveCreateBasepath",  netDriveCreateBasepath);
     settings.setValue("Network/DriveLocalBufferPath", netDriveLocalBufferPath);
     settings.setValue("Network/DriveStartupCmdsAfterFail",netDriveStartupCmdsAfterFail);
+    settings.setValue("Network/AlternatingDiskLimitGb", netAlternatingDiskLimitGb);
+    settings.setValue("Network/WarningDiskLimitGb",     netWarningDiskLimitGb);
     settings.setValue("Network/RemoteConfigFile",     netRemoteConfigFile);
     settings.setValue("Network/RemoteLpfiFile",       netRemoteLpfiFile);
 

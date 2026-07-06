@@ -65,6 +65,8 @@ public:
     QString netRemoteLpfiFile;
     bool    netDriveStartupCmdsAfterFail;
     QString netDriveLocalBufferPath;
+    double  netAlternatingDiskLimitGb;
+    double  netWarningDiskLimitGb;
 
     QString logServerPath;
     QString logApiKey;
