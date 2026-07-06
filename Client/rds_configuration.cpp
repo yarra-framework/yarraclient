@@ -79,9 +79,9 @@ void rdsConfiguration::loadConfiguration()
     // to the network drive failed for three times
     netDriveStartupCmdsAfterFail=settings.value("Network/DriveStartupCmdsAfterFail",false).toBool();
 
-    // Hidden options for overriding the default disk-space thresholds (in GB)
-    // that trigger the alternating update mode and the low-disk-space warning.
-    // A value of 0 means the built-in default (RDS_DISKLIMIT_ALTERNATING/_WARNING) is used.
+    // Disk-space thresholds (in GB) that trigger the alternating update mode
+    // and the low-disk-space warning. A value of 0 means the built-in default
+    // (RDS_DISKLIMIT_ALTERNATING/_WARNING) is used.
     netAlternatingDiskLimitGb=settings.value("Network/AlternatingDiskLimitGb", 0.0).toDouble();
     netWarningDiskLimitGb    =settings.value("Network/WarningDiskLimitGb",     0.0).toDouble();
 

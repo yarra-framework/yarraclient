@@ -1095,6 +1095,78 @@ p, li { white-space: pre-wrap; }
         </layout>
        </item>
        <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_13">
+         <item>
+          <widget class="QLabel" name="networkAlternatingDiskLimitLabel">
+           <property name="minimumSize">
+            <size>
+             <width>140</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Low Disk Space Limit: </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="networkAlternatingDiskLimitSpinbox">
+           <property name="toolTip">
+            <string>Free space on the local buffer drive below which the alternating (one-file-at-a-time) update mode is used. A value of 0 uses the built-in default (5 GB).</string>
+           </property>
+           <property name="suffix">
+            <string> GB</string>
+           </property>
+           <property name="decimals">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <double>1000.000000000000000</double>
+           </property>
+           <property name="specialValueText">
+            <string>Default (5 GB)</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_14">
+         <item>
+          <widget class="QLabel" name="networkWarningDiskLimitLabel">
+           <property name="minimumSize">
+            <size>
+             <width>140</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Critical Disk Space Limit: </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="networkWarningDiskLimitSpinbox">
+           <property name="toolTip">
+            <string>Free space on the local buffer drive below which a critical low-disk-space warning is raised. A value of 0 uses the built-in default (3 GB).</string>
+           </property>
+           <property name="suffix">
+            <string> GB</string>
+           </property>
+           <property name="decimals">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <double>1000.000000000000000</double>
+           </property>
+           <property name="specialValueText">
+            <string>Default (3 GB)</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
         <spacer name="verticalSpacer_8">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
