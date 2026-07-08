@@ -1184,7 +1184,7 @@ p, li { white-space: pre-wrap; }
          <item>
           <widget class="QDoubleSpinBox" name="networkMaxQueueSizeSpinbox">
            <property name="toolTip">
-            <string>When low disk space triggers alternating update mode, pull scans from the RAID up to this much cumulative size per cycle before transferring, instead of exactly one scan at a time. A value of 0 keeps the original one-scan-at-a-time behavior.</string>
+            <string>Pull scans from the RAID in batches of up to this cumulative size before transferring, instead of exporting everything at once. Applies regardless of disk space. If disk space is critically low, exactly one scan at a time is always used instead, no matter what this is set to. A value of 0 disables batching: everything is exported at once when disk space is fine, or one scan at a time when it's low.</string>
            </property>
            <property name="suffix">
             <string> GB</string>
@@ -1196,7 +1196,7 @@ p, li { white-space: pre-wrap; }
             <double>1000.000000000000000</double>
            </property>
            <property name="specialValueText">
-            <string>Disabled (one scan at a time)</string>
+            <string>Disabled (export everything at once)</string>
            </property>
           </widget>
          </item>
