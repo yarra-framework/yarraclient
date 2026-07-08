@@ -275,19 +275,36 @@ void rdsProcessControl::performUpdate()
 
             bool exportSuccessful=true;
 
-            // Decide if files should be exported and transfered at once
-            // of if the files should be exported and transfered one by one.
-            if (alternatingUpdate)
+            // Decide if files should be exported and transfered at once, in
+            // batches, or one by one. A configured batch size is honored
+            // independently of low disk space - but low disk space always
+            // wins and forces exactly one scan at a time regardless of the
+            // configured batch size, since that's the safety-critical path
+            // where maximum conservatism matters more than fewer round trips.
+            if ((alternatingUpdate) || (RTI_CONFIG->netMaxQueueSizeGb > 0.0))
             {
+                qint64 maxBatchBytes=qint64(RTI_CONFIG->netMaxQueueSizeGb * 1000000000.0);
+
                 // Loop over all scans scheduled for the export
                 while ((exportSuccessful) && (!RTI->isPostponementRequested()) && (RTI_RAID->exportsAvailable()))
                 {
-                    // Save one file to the queue directory
+                    // Save one scan - or, if a batch size is configured and
+                    // disk space isn't critically low, up to that much
+                    // cumulative size - to the queue directory
                     setState(STATE_RAIDTRANSFER);
-                    exportSuccessful=RTI_RAID->processExportListEntry();
+
+                    if (alternatingUpdate)
+                    {
+                        exportSuccessful=RTI_RAID->processExportListEntry();
+                    }
+                    else
+                    {
+                        exportSuccessful=RTI_RAID->processExportListBatch(maxBatchBytes);
+                    }
+
                     RTI->processEvents();
 
-                    // Transfer the file to the network
+                    // Transfer the file(s) to the network
                     setState(STATE_NETWORKTRANSFER_ALTERNATING);
                     RTI_NETWORK->transferFiles();
                     RTI->processEvents();

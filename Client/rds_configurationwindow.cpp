@@ -53,9 +53,11 @@ rdsConfigurationWindow::rdsConfigurationWindow(QWidget *parent) :
     // the default tab - switching to them later would then grow the window
     // past whatever size was picked here. Pin an explicit floor instead,
     // comfortably above the true minimum Windows reports once every tab is
-    // accounted for (561x515 logical px), so the fixed-size window never
-    // needs to grow after construction, on this tab or any tab added later.
-    setFixedSize(580, 535);
+    // accounted for, so the fixed-size window never needs to grow after
+    // construction, on this tab or any tab added later. Bump this if a
+    // future row on any tab makes the window feel cramped or triggers a
+    // "setGeometry: Unable to set geometry" warning again.
+    setFixedSize(580, 570);
 
     // Center the window on the screen
     setGeometry(QStyle::alignedRect(Qt::LeftToRight,Qt::AlignCenter,size(),
@@ -173,6 +175,7 @@ void rdsConfigurationWindow::readConfiguration()
     ui->networkBufferPathEdit->setText(config.netDriveLocalBufferPath);
     ui->networkAlternatingDiskLimitSpinbox->setValue(config.netAlternatingDiskLimitGb);
     ui->networkWarningDiskLimitSpinbox->setValue(config.netWarningDiskLimitGb);
+    ui->networkMaxQueueSizeSpinbox->setValue(config.netMaxQueueSizeGb);
 
     ui->updateCombobox->setCurrentIndex(config.infoUpdateMode);
     ui->updatePeriodCombobox->setCurrentIndex(config.infoUpdatePeriodUnit);
@@ -223,6 +226,7 @@ void rdsConfigurationWindow::storeConfiguration()
     config.netDriveLocalBufferPath=ui->networkBufferPathEdit->text();
     config.netAlternatingDiskLimitGb=ui->networkAlternatingDiskLimitSpinbox->value();
     config.netWarningDiskLimitGb=ui->networkWarningDiskLimitSpinbox->value();
+    config.netMaxQueueSizeGb=ui->networkMaxQueueSizeSpinbox->value();
 
     config.logServerPath=ui->logServerPathEdit->text();
     config.logApiKey=ui->logServerApiKeyEdit->text();
