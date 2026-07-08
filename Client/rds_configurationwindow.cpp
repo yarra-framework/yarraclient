@@ -47,15 +47,15 @@ rdsConfigurationWindow::rdsConfigurationWindow(QWidget *parent) :
 #endif
     ui->versionLabel->setText(versionText);
 
-    // Resize to the dialog's true minimum size before centering. QStackedLayout
-    // (which QTabWidget/QStackedWidget use internally) reserves space for the
-    // largest page across all tabs, whether currently visible or not, so
-    // minimumSizeHint() already accounts for every tab correctly - unlike
-    // sizeHint()/adjustSize(), which only reflect whichever page is current
-    // right now. This keeps the designer-time .ui size from ever being too
-    // small for a MSWindowsFixedSizeDialogHint window, on this tab or any tab
-    // added later.
-    resize(minimumSizeHint());
+    // A tab page's layout is only activated once actually shown, so
+    // sizeHint()/minimumSizeHint() queried here don't yet reflect less
+    // frequently visited tabs (e.g. Network) whose content is taller than
+    // the default tab - switching to them later would then grow the window
+    // past whatever size was picked here. Pin an explicit floor instead,
+    // comfortably above the true minimum Windows reports once every tab is
+    // accounted for (561x515 logical px), so the fixed-size window never
+    // needs to grow after construction, on this tab or any tab added later.
+    setFixedSize(580, 535);
 
     // Center the window on the screen
     setGeometry(QStyle::alignedRect(Qt::LeftToRight,Qt::AlignCenter,size(),
