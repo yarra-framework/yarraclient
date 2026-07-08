@@ -15,6 +15,7 @@
 #ifdef YARRA_APP_RDS
     #include "rds_checksum.h"
     #include "rds_copydialog.h"
+    #include "rds_processcontrol.h"
 #endif
 
 
@@ -171,6 +172,14 @@ bool rdsNetwork::transferFiles()
 {
 #ifdef YARRA_APP_RDS
     copyDialog=new rdsCopyDialog();
+
+    // Alternating mode interleaves RAID exports with per-file network
+    // transfers for the whole update, so it isn't safe to start a new scan
+    // during any part of it - not just while actually pulling data off the
+    // RAID. Match the same state check the operation window's status text
+    // uses (rds_operationwindow.cpp), so the two never contradict each other.
+    copyDialog->setScanningAllowed(RTI_CONTROL->getState()!=rdsProcessControl::STATE_NETWORKTRANSFER_ALTERNATING);
+
     copyDialog->show();
 #endif
 

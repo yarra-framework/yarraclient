@@ -40,3 +40,16 @@ void rdsCopyDialog::setProgressCount(int completed, int total)
 {
     ui->progressCount->setText(QString("%1 / %2").arg(completed).arg(total));
 }
+
+
+void rdsCopyDialog::setScanningAllowed(bool allowed)
+{
+    if (allowed)
+    {
+        ui->textLabel->setText("<html><head/><body><p>Transferring raw data to a remote server. Scanning is allowed.</p></body></html>");
+    }
+    else
+    {
+        ui->textLabel->setText("<html><head/><body><p>Transferring raw data to a remote server. Do not start a new scan yet.</p></body></html>");
+    }
+}
