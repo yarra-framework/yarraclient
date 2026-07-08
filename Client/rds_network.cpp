@@ -37,6 +37,9 @@ rdsNetwork::rdsNetwork()
     // from there on.
     estimatedBytesPerSec=20*1024*1024; // 20 MB/s
     hasMeasuredThroughput=false;
+
+    transferTotalBytes=0;
+    transferBytesDone=0;
 #endif
 }
 
@@ -182,6 +185,18 @@ bool rdsNetwork::transferFiles()
     // Read files in directory
     fileList=queueDir.entryList();
 
+#ifdef YARRA_APP_RDS
+    // Track progress across the whole transfer batch rather than just the
+    // file currently being copied, so the dialog reflects overall
+    // completion instead of resetting to 0% for every file.
+    transferTotalBytes=0;
+    for (int i=0; i<fileList.count(); i++)
+    {
+        transferTotalBytes+=QFileInfo(queueDir, fileList.at(i)).size();
+    }
+    transferBytesDone=0;
+#endif
+
     bool success=true;
     for (int i=0; i<fileList.count(); i++)
     {
@@ -212,6 +227,17 @@ bool rdsNetwork::transferFiles()
         }
 
         //RTI->log("DBG: Deleted file");
+
+#ifdef YARRA_APP_RDS
+        // Count this file's bytes toward the overall transfer regardless of
+        // whether it succeeded, so the aggregate percentage keeps moving
+        // forward and doesn't stall on a single failed file.
+        if (currentFilesize>0)
+        {
+            transferBytesDone+=currentFilesize;
+        }
+#endif
+
         QString temp_filename = currentFilename;
         releaseFile();
 
@@ -231,6 +257,7 @@ bool rdsNetwork::transferFiles()
     fileList.clear();
 
 #ifdef YARRA_APP_RDS
+    copyDialog->setProgress(100);
     copyDialog->close();
     RDS_FREE(copyDialog);
 #endif
@@ -395,25 +422,33 @@ bool rdsNetwork::copyFile()
             ti.start();
 
 #ifdef YARRA_APP_RDS
-            // QFile::copy() doesn't report real progress, so estimate one from
-            // the file size and the throughput measured from previous
-            // transfers (see below), instead of leaving the dialog as a plain
-            // busy indicator. Kept below 100% until the copy has actually
-            // finished, whichever wait path gets it there. Simulated scan
-            // files copy at real local-disk speed, which would make the
-            // learned throughput estimate (and the bar) race to 100%
-            // immediately - use a fixed, visibly slow duration instead so
-            // there's something to actually watch while testing.
+            // QFile::copy() doesn't report real progress, so estimate this
+            // file's own completion from its size and the throughput
+            // measured from previous transfers (see below). That estimate is
+            // then folded into the overall transfer's progress (bytes done
+            // from already-completed files, plus this file's estimated
+            // partial progress, over the whole batch's total size), so the
+            // dialog reflects the whole transfer rather than resetting to 0%
+            // for every file. Simulated scan files copy at real local-disk
+            // speed, which would make the learned throughput estimate (and
+            // the bar) race ahead immediately - use a fixed, visibly slow
+            // duration instead so there's something to actually watch while
+            // testing.
             qint64 estimatedMs=RTI->isSimulation() ? 4000
                 : qMax(qint64(500), (srcinfo.size()*1000)/estimatedBytesPerSec);
 
             QTimer progressTimer;
-            if (copyDialog!=0)
+            if ((copyDialog!=0) && (transferTotalBytes>0))
             {
-                copyDialog->setProgress(0);
-                connect(&progressTimer, &QTimer::timeout, this, [this, &ti, estimatedMs]()
+                // Show where the overall transfer stands as of the start of
+                // this file (0% progress within it) immediately, rather than
+                // waiting for the timer's first tick.
+                copyDialog->setProgress(int(qMin(qint64(99), (transferBytesDone*100)/transferTotalBytes)));
+
+                connect(&progressTimer, &QTimer::timeout, this, [this, &ti, &srcinfo, estimatedMs]()
                 {
-                    int percent=int(qMin(qint64(99), (ti.elapsed()*100)/estimatedMs));
+                    qint64 fileBytesEstimate=qMin(srcinfo.size(), (srcinfo.size()*ti.elapsed())/estimatedMs);
+                    int percent=int(qMin(qint64(99), ((transferBytesDone+fileBytesEstimate)*100)/transferTotalBytes));
                     copyDialog->setProgress(percent);
                 });
                 progressTimer.start(200);
@@ -485,11 +520,6 @@ bool rdsNetwork::copyFile()
                 {
                     estimatedBytesPerSec=(estimatedBytesPerSec*7 + measuredBytesPerSec*3)/10;
                 }
-            }
-
-            if (copyDialog!=0)
-            {
-                copyDialog->setProgress(100);
             }
 #endif
 
