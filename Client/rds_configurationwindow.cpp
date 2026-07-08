@@ -47,6 +47,26 @@ rdsConfigurationWindow::rdsConfigurationWindow(QWidget *parent) :
 #endif
     ui->versionLabel->setText(versionText);
 
+    // A page's layout is only fully activated once it has actually been shown,
+    // so a never-shown page can report a stale, too-small size hint. Visit
+    // every page once up front so the stacked widgets already know their true
+    // (largest) size before we lock in the window geometry below - otherwise
+    // switching to a tab/page later on can grow past the fixed dialog size
+    // and conflict with Windows' enforced minimum window size.
+    int originalTabIndex=ui->tabWidget->currentIndex();
+    for (int i=0; i<ui->tabWidget->count(); i++)
+    {
+        ui->tabWidget->setCurrentIndex(i);
+    }
+    ui->tabWidget->setCurrentIndex(originalTabIndex);
+
+    int originalNetworkPageIndex=ui->networkStackedWidget->currentIndex();
+    for (int i=0; i<ui->networkStackedWidget->count(); i++)
+    {
+        ui->networkStackedWidget->setCurrentIndex(i);
+    }
+    ui->networkStackedWidget->setCurrentIndex(originalNetworkPageIndex);
+
     // Resize to the actual minimum required by the current layout content
     // (the designer-time size baked into the .ui can be smaller than what's
     // needed once all tab pages are accounted for) before centering, so
