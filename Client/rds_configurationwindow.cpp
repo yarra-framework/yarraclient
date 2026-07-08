@@ -47,6 +47,13 @@ rdsConfigurationWindow::rdsConfigurationWindow(QWidget *parent) :
 #endif
     ui->versionLabel->setText(versionText);
 
+    // Resize to the actual minimum required by the current layout content
+    // (the designer-time size baked into the .ui can be smaller than what's
+    // needed once all tab pages are accounted for) before centering, so
+    // Windows doesn't have to silently enlarge a MSWindowsFixedSizeDialogHint
+    // window after the fact.
+    adjustSize();
+
     // Center the window on the screen
     setGeometry(QStyle::alignedRect(Qt::LeftToRight,Qt::AlignCenter,size(),
                                     qApp->desktop()->availableGeometry()));
