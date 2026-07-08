@@ -179,22 +179,6 @@ bool rdsNetwork::transferFiles()
         return true;
     }
 
-#ifdef YARRA_APP_RDS
-    // Simulated scan files are small and copy almost instantly, which makes
-    // the copy dialog too brief to interact with (e.g. to test the dismiss
-    // button). Hold it visible for a few seconds, processing events so the
-    // dialog stays responsive during the wait. Never runs outside simulation.
-    if (RTI->isSimulation())
-    {
-        QElapsedTimer simulationDelay;
-        simulationDelay.start();
-        while (!simulationDelay.hasExpired(5000))
-        {
-            RTI->processEvents();
-        }
-    }
-#endif
-
     // Read files in directory
     fileList=queueDir.entryList();
 
@@ -415,8 +399,13 @@ bool rdsNetwork::copyFile()
             // the file size and the throughput measured from previous
             // transfers (see below), instead of leaving the dialog as a plain
             // busy indicator. Kept below 100% until the copy has actually
-            // finished, whichever wait path gets it there.
-            qint64 estimatedMs=qMax(qint64(500), (srcinfo.size()*1000)/estimatedBytesPerSec);
+            // finished, whichever wait path gets it there. Simulated scan
+            // files copy at real local-disk speed, which would make the
+            // learned throughput estimate (and the bar) race to 100%
+            // immediately - use a fixed, visibly slow duration instead so
+            // there's something to actually watch while testing.
+            qint64 estimatedMs=RTI->isSimulation() ? 4000
+                : qMax(qint64(500), (srcinfo.size()*1000)/estimatedBytesPerSec);
 
             QTimer progressTimer;
             if (copyDialog!=0)
@@ -452,6 +441,24 @@ bool rdsNetwork::copyFile()
                     copyError=true;
                 }
             }
+
+#ifdef YARRA_APP_RDS
+            // The real copy above finishes almost instantly for simulated
+            // scan files, which would make the dialog (and its progress bar)
+            // flash by too fast to see or interact with. Stretch the visible
+            // wait out to the estimated duration used for the progress bar,
+            // continuing to process events - and the progress timer along
+            // with them - so the bar keeps climbing and the dismiss button
+            // stays responsive. Never runs outside simulation; real transfers
+            // are already paced by their own actual copy speed.
+            if (RTI->isSimulation())
+            {
+                while (ti.elapsed()<estimatedMs)
+                {
+                    RTI->processEvents();
+                }
+            }
+#endif
 
 #ifdef YARRA_APP_RDS
             // Refine the throughput estimate from this transfer so the next
