@@ -10,6 +10,8 @@
 #include "rds_global.h"
 #include "rds_exechelper.h"
 
+#include <QElapsedTimer>
+
 #ifdef YARRA_APP_RDS
     #include "rds_checksum.h"
     #include "rds_copydialog.h"
@@ -163,6 +165,22 @@ bool rdsNetwork::transferFiles()
     {
         return true;
     }
+
+#ifdef YARRA_APP_RDS
+    // Simulated scan files are small and copy almost instantly, which makes
+    // the copy dialog too brief to interact with (e.g. to test the dismiss
+    // button). Hold it visible for a few seconds, processing events so the
+    // dialog stays responsive during the wait. Never runs outside simulation.
+    if (RTI->isSimulation())
+    {
+        QElapsedTimer simulationDelay;
+        simulationDelay.start();
+        while (!simulationDelay.hasExpired(5000))
+        {
+            RTI->processEvents();
+        }
+    }
+#endif
 
     // Read files in directory
     fileList=queueDir.entryList();
