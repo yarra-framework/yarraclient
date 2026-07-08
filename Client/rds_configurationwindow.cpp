@@ -84,6 +84,13 @@ void rdsConfigurationWindow::closeEvent(QCloseEvent *event)
 
 bool rdsConfigurationWindow::checkAccessPassword()
 {
+    // Skip the password prompt entirely in simulation mode, since there's no
+    // real scanner/data to protect and it just slows down testing.
+    if (RTI->isSimulation())
+    {
+        return true;
+    }
+
     // Password check to prevent unauthorized users to change
     // the settings
     QInputDialog pwdDialog;
