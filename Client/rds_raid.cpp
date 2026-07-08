@@ -1039,6 +1039,19 @@ bool rdsRaid::exportsAvailable()
 }
 
 
+qint64 rdsRaid::getExportListTotalSize()
+{
+    qint64 totalSize=0;
+
+    for (int i=0; i<exportList.count(); i++)
+    {
+        totalSize+=getRaidEntry(exportList.at(i)->raidIndex)->size;
+    }
+
+    return totalSize;
+}
+
+
 bool rdsRaid::exportScanFromList()
 {
     if (exportList.count()==0)

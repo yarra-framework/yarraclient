@@ -275,16 +275,22 @@ void rdsProcessControl::performUpdate()
 
             bool exportSuccessful=true;
 
+            qint64 maxBatchBytes=qint64(RTI_CONFIG->netMaxQueueSizeGb * 1000000000.0);
+
+            // Batching only makes sense if there's actually more to export
+            // than fits in one batch - otherwise it would all go out in a
+            // single batch anyway, so just use the normal all-at-once path
+            // instead of the extra RAID/network round trip overhead.
+            bool useBatching=(RTI_CONFIG->netMaxQueueSizeGb > 0.0) && (RTI_RAID->getExportListTotalSize() > maxBatchBytes);
+
             // Decide if files should be exported and transfered at once, in
             // batches, or one by one. A configured batch size is honored
             // independently of low disk space - but low disk space always
             // wins and forces exactly one scan at a time regardless of the
             // configured batch size, since that's the safety-critical path
             // where maximum conservatism matters more than fewer round trips.
-            if ((alternatingUpdate) || (RTI_CONFIG->netMaxQueueSizeGb > 0.0))
+            if ((alternatingUpdate) || (useBatching))
             {
-                qint64 maxBatchBytes=qint64(RTI_CONFIG->netMaxQueueSizeGb * 1000000000.0);
-
                 // Loop over all scans scheduled for the export
                 while ((exportSuccessful) && (!RTI->isPostponementRequested()) && (RTI_RAID->exportsAvailable()))
                 {

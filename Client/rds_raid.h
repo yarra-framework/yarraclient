@@ -58,6 +58,7 @@ public:
     bool processExportListEntry();
     bool processExportListBatch(qint64 maxBatchBytes);
     bool exportsAvailable();
+    qint64 getExportListTotalSize();
 
     void dumpRaidList(QString filename);
     void dumpRaidToolOutput(QString filename);
