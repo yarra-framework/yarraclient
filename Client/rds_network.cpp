@@ -31,6 +31,10 @@ rdsNetwork::rdsNetwork()
 
 #ifdef YARRA_APP_RDS
     copyDialog=0;
+
+    // Initial assumption for the copy dialog's progress estimate, refined
+    // after each successful transfer with the actually measured throughput.
+    estimatedBytesPerSec=20*1024*1024; // 20 MB/s
 #endif
 }
 
@@ -406,11 +410,11 @@ bool rdsNetwork::copyFile()
 
 #ifdef YARRA_APP_RDS
             // QFile::copy() doesn't report real progress, so estimate one from
-            // the file size and a plausible transfer speed instead of leaving
-            // the dialog as a plain busy indicator. Kept below 100% until the
-            // copy has actually finished, whichever wait path gets it there.
-            const qint64 assumedBytesPerSec=20*1024*1024; // 20 MB/s
-            qint64 estimatedMs=qMax(qint64(500), (srcinfo.size()*1000)/assumedBytesPerSec);
+            // the file size and the throughput measured from previous
+            // transfers (see below), instead of leaving the dialog as a plain
+            // busy indicator. Kept below 100% until the copy has actually
+            // finished, whichever wait path gets it there.
+            qint64 estimatedMs=qMax(qint64(500), (srcinfo.size()*1000)/estimatedBytesPerSec);
 
             QTimer progressTimer;
             if (copyDialog!=0)
@@ -448,6 +452,19 @@ bool rdsNetwork::copyFile()
             }
 
 #ifdef YARRA_APP_RDS
+            // Refine the throughput estimate from this transfer so the next
+            // file's progress bar tracks reality more closely. Ignore very
+            // short transfers, where timer granularity/filesystem caching
+            // effects make the measurement unreliable, and clamp the result
+            // to sane bounds so one outlier can't skew future estimates too
+            // far. Blended as an exponential moving average so the estimate
+            // settles over several files rather than swinging on any one.
+            if ((copyThread.success) && (ti.elapsed()>=50))
+            {
+                qint64 measuredBytesPerSec=qBound(qint64(256*1024), (srcinfo.size()*1000)/ti.elapsed(), qint64(2000)*1024*1024);
+                estimatedBytesPerSec=(estimatedBytesPerSec*7 + measuredBytesPerSec*3)/10;
+            }
+
             if (copyDialog!=0)
             {
                 copyDialog->setProgress(100);
