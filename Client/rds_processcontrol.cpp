@@ -291,6 +291,16 @@ void rdsProcessControl::performUpdate()
             // where maximum conservatism matters more than fewer round trips.
             if ((alternatingUpdate) || (useBatching))
             {
+                // Have the copy dialog track progress against the whole
+                // update's scan list, not just whatever's queued for the
+                // current cycle. Scans (not files) are the unit tracked here
+                // since a single scan can produce more than one file via
+                // adjustment-scan bundling, which doesn't map cleanly onto a
+                // file count known upfront.
+                int totalScans=RTI_RAID->getExportListCount();
+                int scansDone=0;
+                RTI_NETWORK->beginOverallTransfer(RTI_RAID->getExportListTotalSize());
+
                 // Loop over all scans scheduled for the export
                 while ((exportSuccessful) && (!RTI->isPostponementRequested()) && (RTI_RAID->exportsAvailable()))
                 {
@@ -298,6 +308,8 @@ void rdsProcessControl::performUpdate()
                     // disk space isn't critically low, up to that much
                     // cumulative size - to the queue directory
                     setState(STATE_RAIDTRANSFER);
+
+                    int scansBeforeExport=RTI_RAID->getExportListCount();
 
                     if (alternatingUpdate)
                     {
@@ -308,6 +320,9 @@ void rdsProcessControl::performUpdate()
                         exportSuccessful=RTI_RAID->processExportListBatch(maxBatchBytes);
                     }
 
+                    scansDone+=scansBeforeExport-RTI_RAID->getExportListCount();
+                    RTI_NETWORK->setScanProgress(scansDone, totalScans);
+
                     RTI->processEvents();
 
                     // Transfer the file(s) to the network
@@ -315,6 +330,9 @@ void rdsProcessControl::performUpdate()
                     RTI_NETWORK->transferFiles();
                     RTI->processEvents();
                 }
+
+                RTI_NETWORK->endOverallTransfer();
+
                 if (RTI->isPostponementRequested())
                 {
                     RTI->log("Received postponement request. Stopping update.");

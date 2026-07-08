@@ -1052,6 +1052,12 @@ qint64 rdsRaid::getExportListTotalSize()
 }
 
 
+int rdsRaid::getExportListCount()
+{
+    return exportList.count();
+}
+
+
 bool rdsRaid::exportScanFromList()
 {
     if (exportList.count()==0)

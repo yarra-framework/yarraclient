@@ -42,6 +42,10 @@ rdsNetwork::rdsNetwork()
     transferTotalBytes=0;
     transferBytesDone=0;
     transferFilesDone=0;
+
+    overallTransferActive=false;
+    overallScansDone=0;
+    overallScansTotal=0;
 #endif
 }
 
@@ -49,6 +53,39 @@ rdsNetwork::rdsNetwork()
 rdsNetwork::~rdsNetwork()
 {
 }
+
+
+#ifdef YARRA_APP_RDS
+void rdsNetwork::beginOverallTransfer(qint64 totalBytes)
+{
+    overallTransferActive=true;
+
+    transferTotalBytes=totalBytes;
+    transferBytesDone=0;
+    transferFilesDone=0;
+
+    overallScansDone=0;
+    overallScansTotal=0;
+}
+
+
+void rdsNetwork::endOverallTransfer()
+{
+    overallTransferActive=false;
+}
+
+
+void rdsNetwork::setScanProgress(int scansDone, int totalScans)
+{
+    overallScansDone=scansDone;
+    overallScansTotal=totalScans;
+
+    if (copyDialog!=0)
+    {
+        copyDialog->setProgressCount(overallScansDone, overallScansTotal);
+    }
+}
+#endif
 
 
 bool rdsNetwork::setLocalBufferPath(QString bufferPath)
@@ -198,18 +235,31 @@ bool rdsNetwork::transferFiles()
 #ifdef YARRA_APP_RDS
     // Track progress across the whole transfer batch rather than just the
     // file currently being copied, so the dialog reflects overall
-    // completion instead of resetting to 0% for every file.
-    transferTotalBytes=0;
-    for (int i=0; i<fileList.count(); i++)
+    // completion instead of resetting to 0% for every file. If an alternating/
+    // batched update loop is tracking progress across the whole update
+    // instead (see beginOverallTransfer()), leave its running totals alone -
+    // they span multiple calls to this function, one per cycle.
+    if (!overallTransferActive)
     {
-        transferTotalBytes+=QFileInfo(queueDir, fileList.at(i)).size();
+        transferTotalBytes=0;
+        for (int i=0; i<fileList.count(); i++)
+        {
+            transferTotalBytes+=QFileInfo(queueDir, fileList.at(i)).size();
+        }
+        transferBytesDone=0;
+        transferFilesDone=0;
     }
-    transferBytesDone=0;
-    transferFilesDone=0;
 
     if (copyDialog!=0)
     {
-        copyDialog->setProgressCount(transferFilesDone, fileList.count());
+        if (overallTransferActive)
+        {
+            copyDialog->setProgressCount(overallScansDone, overallScansTotal);
+        }
+        else
+        {
+            copyDialog->setProgressCount(transferFilesDone, fileList.count());
+        }
     }
 #endif
 
@@ -255,7 +305,10 @@ bool rdsNetwork::transferFiles()
 
         transferFilesDone++;
 
-        if (copyDialog!=0)
+        // In overall-tracking mode the count display is scan-based (see
+        // setScanProgress()), since a scan can produce more than one file -
+        // file counts don't map cleanly onto it, so leave it alone here.
+        if ((copyDialog!=0) && (!overallTransferActive))
         {
             copyDialog->setProgressCount(transferFilesDone, fileList.count());
         }
@@ -278,8 +331,15 @@ bool rdsNetwork::transferFiles()
     //RTI->log("DBG: Left loop");
 
 #ifdef YARRA_APP_RDS
-    copyDialog->setProgress(100);
-    copyDialog->setProgressCount(fileList.count(), fileList.count());
+    // Finishing this cycle's queue directory doesn't mean the whole update
+    // is done when an alternating/batched loop is tracking overall progress
+    // across multiple cycles - only force a clean 100%/full-count finish for
+    // a standalone (non-overall-tracked) transfer.
+    if (!overallTransferActive)
+    {
+        copyDialog->setProgress(100);
+        copyDialog->setProgressCount(fileList.count(), fileList.count());
+    }
 #endif
 
     fileList.clear();

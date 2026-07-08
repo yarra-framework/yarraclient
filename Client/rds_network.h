@@ -50,6 +50,19 @@ public:
 
     NetLogger netLogger;
 
+#ifdef YARRA_APP_RDS
+    // Used by the alternating/batched update loop (rds_processcontrol.cpp)
+    // to have the copy dialog reflect progress across the whole update
+    // instead of resetting for each cycle's queue directory contents.
+    // beginOverallTransfer()/endOverallTransfer() bracket the whole loop;
+    // setScanProgress() is called once per cycle with the RAID's own scan
+    // count, since a scan can produce more than one file (adjustment scan
+    // bundling) and so doesn't map cleanly onto file counts.
+    void beginOverallTransfer(qint64 totalBytes);
+    void endOverallTransfer();
+    void setScanProgress(int scansDone, int totalScans);
+#endif
+
 private:
 
     QDir queueDir;
@@ -71,6 +84,10 @@ private:
     qint64 transferTotalBytes;
     qint64 transferBytesDone;
     int transferFilesDone;
+
+    bool overallTransferActive;
+    int overallScansDone;
+    int overallScansTotal;
 #endif
 };
 
