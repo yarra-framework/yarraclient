@@ -46,10 +46,10 @@ void rdsCopyDialog::setScanningAllowed(bool allowed)
 {
     if (allowed)
     {
-        ui->textLabel->setText("<html><head/><body><p>Transferring raw data to a remote server. Scanning is allowed.</p></body></html>");
+        ui->textLabel->setText("<html><head/><body><p>Transferring raw data to a remote server.<br><span style=\"color:#1B7A1B;\"><b>Scanning is allowed.</b></span></p></body></html>");
     }
     else
     {
-        ui->textLabel->setText("<html><head/><body><p>Transferring raw data to a remote server. Do not start a new scan yet.</p></body></html>");
+        ui->textLabel->setText("<html><head/><body><p>Transferring raw data to a remote server.<br><span style=\"color:#C0392B;\"><b>Do not start a new scan yet.</b></span></p></body></html>");
     }
 }
