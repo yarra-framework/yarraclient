@@ -1006,6 +1006,10 @@ bool rdsRaid::processExportListBatch(qint64 maxBatchBytes)
 {
     bool result=true;
     qint64 batchBytes=0;
+    int scansInBatch=0;
+
+    RTI->debug("Starting export batch: target size " + QString::number(maxBatchBytes)
+               + " bytes, " + QString::number(exportList.count()) + " scan(s) remaining overall.");
 
     // Pull scans one at a time (each call still goes through the regular
     // single-scan export path, so adjustment-scan bundling etc. behaves
@@ -1017,7 +1021,13 @@ bool rdsRaid::processExportListBatch(qint64 maxBatchBytes)
     // slightly over maxBatchBytes - this is a budget, not a hard ceiling.
     while ((result==true) && (exportList.count()>0) && ((batchBytes==0) || (batchBytes<maxBatchBytes)))
     {
-        batchBytes+=getRaidEntry(getFirstExportEntry()->raidIndex)->size;
+        qint64 nextScanSize=getRaidEntry(getFirstExportEntry()->raidIndex)->size;
+        batchBytes+=nextScanSize;
+        scansInBatch++;
+
+        RTI->debug("  Adding scan " + QString::number(scansInBatch) + " to batch: " + QString::number(nextScanSize)
+                   + " bytes (running batch total " + QString::number(batchBytes) + "/" + QString::number(maxBatchBytes) + " bytes)");
+
         result=exportScanFromList();
 
         RTI->processEvents();
@@ -1028,6 +1038,9 @@ bool rdsRaid::processExportListBatch(qint64 maxBatchBytes)
             break;
         }
     }
+
+    RTI->log("Finished export batch: " + QString::number(scansInBatch) + " scan(s), "
+             + QString::number(batchBytes) + " bytes total, " + QString::number(exportList.count()) + " scan(s) remaining.");
 
     return result;
 }

@@ -281,7 +281,14 @@ void rdsProcessControl::performUpdate()
             // than fits in one batch - otherwise it would all go out in a
             // single batch anyway, so just use the normal all-at-once path
             // instead of the extra RAID/network round trip overhead.
-            bool useBatching=(RTI_CONFIG->netMaxQueueSizeGb > 0.0) && (RTI_RAID->getExportListTotalSize() > maxBatchBytes);
+            qint64 exportListTotalSize=RTI_RAID->getExportListTotalSize();
+            bool useBatching=(RTI_CONFIG->netMaxQueueSizeGb > 0.0) && (exportListTotalSize > maxBatchBytes);
+
+            RTI->log("Export mode decision: exportListTotalSize=" + QString::number(exportListTotalSize)
+                     + " bytes, netMaxQueueSizeGb=" + QString::number(RTI_CONFIG->netMaxQueueSizeGb)
+                     + " (maxBatchBytes=" + QString::number(maxBatchBytes) + " bytes)"
+                     + ", alternatingUpdate=" + (alternatingUpdate ? "true" : "false")
+                     + ", useBatching=" + (useBatching ? "true" : "false"));
 
             // Decide if files should be exported and transfered at once, in
             // batches, or one by one. A configured batch size is honored
@@ -299,11 +306,19 @@ void rdsProcessControl::performUpdate()
                 // file count known upfront.
                 int totalScans=RTI_RAID->getExportListCount();
                 int scansDone=0;
-                RTI_NETWORK->beginOverallTransfer(RTI_RAID->getExportListTotalSize());
+                RTI_NETWORK->beginOverallTransfer(exportListTotalSize);
+
+                RTI->log("Starting " + QString(alternatingUpdate ? "alternating" : "batched")
+                         + " export: " + QString::number(totalScans) + " scan(s) scheduled, "
+                         + QString::number(exportListTotalSize) + " bytes total.");
+
+                int cycle=0;
 
                 // Loop over all scans scheduled for the export
                 while ((exportSuccessful) && (!RTI->isPostponementRequested()) && (RTI_RAID->exportsAvailable()))
                 {
+                    cycle++;
+
                     // Save one scan - or, if a batch size is configured and
                     // disk space isn't critically low, up to that much
                     // cumulative size - to the queue directory
@@ -313,6 +328,10 @@ void rdsProcessControl::performUpdate()
 
                     if (alternatingUpdate)
                     {
+                        if (RTI_CONFIG->netMaxQueueSizeGb > 0.0)
+                        {
+                            RTI->log("Cycle " + QString::number(cycle) + ": low disk space active - ignoring configured batch size, exporting one scan at a time.");
+                        }
                         exportSuccessful=RTI_RAID->processExportListEntry();
                     }
                     else
@@ -320,8 +339,13 @@ void rdsProcessControl::performUpdate()
                         exportSuccessful=RTI_RAID->processExportListBatch(maxBatchBytes);
                     }
 
-                    scansDone+=scansBeforeExport-RTI_RAID->getExportListCount();
+                    int scansThisCycle=scansBeforeExport-RTI_RAID->getExportListCount();
+                    scansDone+=scansThisCycle;
                     RTI_NETWORK->setScanProgress(scansDone, totalScans);
+
+                    RTI->log("Cycle " + QString::number(cycle) + ": exported " + QString::number(scansThisCycle)
+                             + " scan(s) (" + QString::number(scansDone) + "/" + QString::number(totalScans)
+                             + " total so far), " + QString::number(RTI_RAID->getExportListCount()) + " scan(s) remaining.");
 
                     RTI->processEvents();
 
@@ -332,6 +356,10 @@ void rdsProcessControl::performUpdate()
                 }
 
                 RTI_NETWORK->endOverallTransfer();
+
+                RTI->log("Finished " + QString(alternatingUpdate ? "alternating" : "batched")
+                         + " export after " + QString::number(cycle) + " cycle(s): "
+                         + QString::number(scansDone) + "/" + QString::number(totalScans) + " scan(s) processed.");
 
                 if (RTI->isPostponementRequested())
                 {
