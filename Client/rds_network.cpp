@@ -32,9 +32,11 @@ rdsNetwork::rdsNetwork()
 #ifdef YARRA_APP_RDS
     copyDialog=0;
 
-    // Initial assumption for the copy dialog's progress estimate, refined
-    // after each successful transfer with the actually measured throughput.
+    // Initial assumption for the copy dialog's progress estimate, replaced
+    // outright by the first real measurement (see copyFile()) and refined
+    // from there on.
     estimatedBytesPerSec=20*1024*1024; // 20 MB/s
+    hasMeasuredThroughput=false;
 #endif
 }
 
@@ -457,12 +459,25 @@ bool rdsNetwork::copyFile()
             // short transfers, where timer granularity/filesystem caching
             // effects make the measurement unreliable, and clamp the result
             // to sane bounds so one outlier can't skew future estimates too
-            // far. Blended as an exponential moving average so the estimate
+            // far. The initial guess is a placeholder only - the first real
+            // measurement replaces it outright rather than being blended
+            // with it, so the second file already uses the exact throughput
+            // measured from the first. From the second measurement on,
+            // blend as an exponential moving average so the estimate
             // settles over several files rather than swinging on any one.
             if ((copyThread.success) && (ti.elapsed()>=50))
             {
                 qint64 measuredBytesPerSec=qBound(qint64(256*1024), (srcinfo.size()*1000)/ti.elapsed(), qint64(2000)*1024*1024);
-                estimatedBytesPerSec=(estimatedBytesPerSec*7 + measuredBytesPerSec*3)/10;
+
+                if (!hasMeasuredThroughput)
+                {
+                    estimatedBytesPerSec=measuredBytesPerSec;
+                    hasMeasuredThroughput=true;
+                }
+                else
+                {
+                    estimatedBytesPerSec=(estimatedBytesPerSec*7 + measuredBytesPerSec*3)/10;
+                }
             }
 
             if (copyDialog!=0)

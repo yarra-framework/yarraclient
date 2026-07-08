@@ -67,6 +67,7 @@ private:
 #ifdef YARRA_APP_RDS
     rdsCopyDialog* copyDialog;
     qint64 estimatedBytesPerSec;
+    bool hasMeasuredThroughput;
 #endif
 };
 
