@@ -1002,6 +1002,37 @@ bool rdsRaid::processExportListEntry()
 }
 
 
+bool rdsRaid::processExportListBatch(qint64 maxBatchBytes)
+{
+    bool result=true;
+    qint64 batchBytes=0;
+
+    // Pull scans one at a time (each call still goes through the regular
+    // single-scan export path, so adjustment-scan bundling etc. behaves
+    // exactly as it does for a plain single-scan export), but keep going
+    // until the cumulative size of this batch reaches maxBatchBytes. Always
+    // export at least one scan regardless of size, so a single scan larger
+    // than maxBatchBytes can't stall the batch forever. Bundled adjustment
+    // scans aren't counted in batchBytes, so the true amount queued can run
+    // slightly over maxBatchBytes - this is a budget, not a hard ceiling.
+    while ((result==true) && (exportList.count()>0) && ((batchBytes==0) || (batchBytes<maxBatchBytes)))
+    {
+        batchBytes+=getRaidEntry(getFirstExportEntry()->raidIndex)->size;
+        result=exportScanFromList();
+
+        RTI->processEvents();
+        if (RTI->isPostponementRequested())
+        {
+            RTI->log("Received postponement request. Stopping update.");
+            RTI_NETLOG.postEvent(EventInfo::Type::Update, EventInfo::Detail::Information, EventInfo::Severity::Success, "Postpone requested");
+            break;
+        }
+    }
+
+    return result;
+}
+
+
 bool rdsRaid::exportsAvailable()
 {
     return (exportList.count()>0);

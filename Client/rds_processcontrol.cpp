@@ -282,12 +282,22 @@ void rdsProcessControl::performUpdate()
                 // Loop over all scans scheduled for the export
                 while ((exportSuccessful) && (!RTI->isPostponementRequested()) && (RTI_RAID->exportsAvailable()))
                 {
-                    // Save one file to the queue directory
+                    // Save one scan - or, if a batch size is configured, up
+                    // to that much cumulative size - to the queue directory
                     setState(STATE_RAIDTRANSFER);
-                    exportSuccessful=RTI_RAID->processExportListEntry();
+
+                    if (RTI_CONFIG->netMaxQueueSizeGb > 0.0)
+                    {
+                        exportSuccessful=RTI_RAID->processExportListBatch(qint64(RTI_CONFIG->netMaxQueueSizeGb * 1000000000.0));
+                    }
+                    else
+                    {
+                        exportSuccessful=RTI_RAID->processExportListEntry();
+                    }
+
                     RTI->processEvents();
 
-                    // Transfer the file to the network
+                    // Transfer the file(s) to the network
                     setState(STATE_NETWORKTRANSFER_ALTERNATING);
                     RTI_NETWORK->transferFiles();
                     RTI->processEvents();

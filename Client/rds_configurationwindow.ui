@@ -1167,6 +1167,42 @@ p, li { white-space: pre-wrap; }
         </layout>
        </item>
        <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_15">
+         <item>
+          <widget class="QLabel" name="networkMaxQueueSizeLabel">
+           <property name="minimumSize">
+            <size>
+             <width>140</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Max Queue Batch Size: </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="networkMaxQueueSizeSpinbox">
+           <property name="toolTip">
+            <string>When low disk space triggers alternating update mode, pull scans from the RAID up to this much cumulative size per cycle before transferring, instead of exactly one scan at a time. A value of 0 keeps the original one-scan-at-a-time behavior.</string>
+           </property>
+           <property name="suffix">
+            <string> GB</string>
+           </property>
+           <property name="decimals">
+            <number>1</number>
+           </property>
+           <property name="maximum">
+            <double>1000.000000000000000</double>
+           </property>
+           <property name="specialValueText">
+            <string>Disabled (one scan at a time)</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
         <spacer name="verticalSpacer_8">
          <property name="orientation">
           <enum>Qt::Vertical</enum>

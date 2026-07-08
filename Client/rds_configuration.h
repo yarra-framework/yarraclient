@@ -67,6 +67,7 @@ public:
     QString netDriveLocalBufferPath;
     double  netAlternatingDiskLimitGb;
     double  netWarningDiskLimitGb;
+    double  netMaxQueueSizeGb;
 
     QString logServerPath;
     QString logApiKey;
