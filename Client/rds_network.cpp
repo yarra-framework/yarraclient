@@ -28,6 +28,10 @@ rdsNetwork::rdsNetwork()
     currentTimeStamp="";
 
     connectionActive=false;
+
+#ifdef YARRA_APP_RDS
+    copyDialog=0;
+#endif
 }
 
 
@@ -156,13 +160,16 @@ void rdsNetwork::closeConnection()
 bool rdsNetwork::transferFiles()
 {
 #ifdef YARRA_APP_RDS
-    rdsCopyDialog copyDialog;
-    copyDialog.show();
+    copyDialog=new rdsCopyDialog();
+    copyDialog->show();
 #endif
 
     // Calling getQueueCount will also refresh the queue directory list.
     if (getQueueCount()==0)
     {
+#ifdef YARRA_APP_RDS
+        RDS_FREE(copyDialog);
+#endif
         return true;
     }
 
@@ -234,7 +241,8 @@ bool rdsNetwork::transferFiles()
     fileList.clear();
 
 #ifdef YARRA_APP_RDS
-    copyDialog.close();
+    copyDialog->close();
+    RDS_FREE(copyDialog);
 #endif
 
     return true;
@@ -396,6 +404,27 @@ bool rdsNetwork::copyFile()
             QElapsedTimer ti;
             ti.start();
 
+#ifdef YARRA_APP_RDS
+            // QFile::copy() doesn't report real progress, so estimate one from
+            // the file size and a plausible transfer speed instead of leaving
+            // the dialog as a plain busy indicator. Kept below 100% until the
+            // copy has actually finished, whichever wait path gets it there.
+            const qint64 assumedBytesPerSec=20*1024*1024; // 20 MB/s
+            qint64 estimatedMs=qMax(qint64(500), (srcinfo.size()*1000)/assumedBytesPerSec);
+
+            QTimer progressTimer;
+            if (copyDialog!=0)
+            {
+                copyDialog->setProgress(0);
+                connect(&progressTimer, &QTimer::timeout, this, [this, &ti, estimatedMs]()
+                {
+                    int percent=int(qMin(qint64(99), (ti.elapsed()*100)/estimatedMs));
+                    copyDialog->setProgress(percent);
+                });
+                progressTimer.start(200);
+            }
+#endif
+
             copyThread.start();
             q.exec();
 
@@ -417,6 +446,13 @@ bool rdsNetwork::copyFile()
                     copyError=true;
                 }
             }
+
+#ifdef YARRA_APP_RDS
+            if (copyDialog!=0)
+            {
+                copyDialog->setProgress(100);
+            }
+#endif
 
             if (copyThread.lockError)
             {

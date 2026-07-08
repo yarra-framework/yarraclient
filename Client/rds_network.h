@@ -6,6 +6,10 @@
 
 #include <../NetLogger/netlogger.h>
 
+#ifdef YARRA_APP_RDS
+class rdsCopyDialog;
+#endif
+
 
 class rdsNetwork : public QObject
 {
@@ -59,6 +63,10 @@ private:
     QString currentTimeStamp;
 
     QDir networkDrive;
+
+#ifdef YARRA_APP_RDS
+    rdsCopyDialog* copyDialog;
+#endif
 };
 
 

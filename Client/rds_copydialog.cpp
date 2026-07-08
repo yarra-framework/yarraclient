@@ -28,3 +28,9 @@ rdsCopyDialog::~rdsCopyDialog()
 {
     delete ui;
 }
+
+
+void rdsCopyDialog::setProgress(int percent)
+{
+    ui->progressBar->setValue(qBound(0, percent, 100));
+}
