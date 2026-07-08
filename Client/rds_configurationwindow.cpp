@@ -47,32 +47,15 @@ rdsConfigurationWindow::rdsConfigurationWindow(QWidget *parent) :
 #endif
     ui->versionLabel->setText(versionText);
 
-    // A page's layout is only fully activated once it has actually been shown,
-    // so a never-shown page can report a stale, too-small size hint. Visit
-    // every page once up front so the stacked widgets already know their true
-    // (largest) size before we lock in the window geometry below - otherwise
-    // switching to a tab/page later on can grow past the fixed dialog size
-    // and conflict with Windows' enforced minimum window size.
-    int originalTabIndex=ui->tabWidget->currentIndex();
-    for (int i=0; i<ui->tabWidget->count(); i++)
-    {
-        ui->tabWidget->setCurrentIndex(i);
-    }
-    ui->tabWidget->setCurrentIndex(originalTabIndex);
-
-    int originalNetworkPageIndex=ui->networkStackedWidget->currentIndex();
-    for (int i=0; i<ui->networkStackedWidget->count(); i++)
-    {
-        ui->networkStackedWidget->setCurrentIndex(i);
-    }
-    ui->networkStackedWidget->setCurrentIndex(originalNetworkPageIndex);
-
-    // Resize to the actual minimum required by the current layout content
-    // (the designer-time size baked into the .ui can be smaller than what's
-    // needed once all tab pages are accounted for) before centering, so
-    // Windows doesn't have to silently enlarge a MSWindowsFixedSizeDialogHint
-    // window after the fact.
-    adjustSize();
+    // Resize to the dialog's true minimum size before centering. QStackedLayout
+    // (which QTabWidget/QStackedWidget use internally) reserves space for the
+    // largest page across all tabs, whether currently visible or not, so
+    // minimumSizeHint() already accounts for every tab correctly - unlike
+    // sizeHint()/adjustSize(), which only reflect whichever page is current
+    // right now. This keeps the designer-time .ui size from ever being too
+    // small for a MSWindowsFixedSizeDialogHint window, on this tab or any tab
+    // added later.
+    resize(minimumSizeHint());
 
     // Center the window on the screen
     setGeometry(QStyle::alignedRect(Qt::LeftToRight,Qt::AlignCenter,size(),
