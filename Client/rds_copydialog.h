@@ -18,6 +18,7 @@ public:
 
 public slots:
     void setProgress(int percent);
+    void setProgressCount(int completed, int total);
 
 private:
     Ui::rdsCopyDialog *ui;

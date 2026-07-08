@@ -70,6 +70,7 @@ private:
     bool hasMeasuredThroughput;
     qint64 transferTotalBytes;
     qint64 transferBytesDone;
+    int transferFilesDone;
 #endif
 };
 

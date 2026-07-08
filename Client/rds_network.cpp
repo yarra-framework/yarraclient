@@ -40,6 +40,7 @@ rdsNetwork::rdsNetwork()
 
     transferTotalBytes=0;
     transferBytesDone=0;
+    transferFilesDone=0;
 #endif
 }
 
@@ -195,6 +196,12 @@ bool rdsNetwork::transferFiles()
         transferTotalBytes+=QFileInfo(queueDir, fileList.at(i)).size();
     }
     transferBytesDone=0;
+    transferFilesDone=0;
+
+    if (copyDialog!=0)
+    {
+        copyDialog->setProgressCount(transferFilesDone, fileList.count());
+    }
 #endif
 
     bool success=true;
@@ -229,12 +236,19 @@ bool rdsNetwork::transferFiles()
         //RTI->log("DBG: Deleted file");
 
 #ifdef YARRA_APP_RDS
-        // Count this file's bytes toward the overall transfer regardless of
-        // whether it succeeded, so the aggregate percentage keeps moving
-        // forward and doesn't stall on a single failed file.
+        // Count this file toward the overall transfer regardless of whether
+        // it succeeded, so the aggregate progress keeps moving forward and
+        // doesn't stall on a single failed file.
         if (currentFilesize>0)
         {
             transferBytesDone+=currentFilesize;
+        }
+
+        transferFilesDone++;
+
+        if (copyDialog!=0)
+        {
+            copyDialog->setProgressCount(transferFilesDone, fileList.count());
         }
 #endif
 
@@ -254,10 +268,14 @@ bool rdsNetwork::transferFiles()
 
     //RTI->log("DBG: Left loop");
 
+#ifdef YARRA_APP_RDS
+    copyDialog->setProgress(100);
+    copyDialog->setProgressCount(fileList.count(), fileList.count());
+#endif
+
     fileList.clear();
 
 #ifdef YARRA_APP_RDS
-    copyDialog->setProgress(100);
     copyDialog->close();
     RDS_FREE(copyDialog);
 #endif

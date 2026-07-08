@@ -34,3 +34,9 @@ void rdsCopyDialog::setProgress(int percent)
 {
     ui->progressBar->setValue(qBound(0, percent, 100));
 }
+
+
+void rdsCopyDialog::setProgressCount(int completed, int total)
+{
+    ui->progressCount->setText(QString("%1 / %2").arg(completed).arg(total));
+}
