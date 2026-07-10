@@ -306,11 +306,11 @@ void rdsProcessControl::performUpdate()
                 // file count known upfront.
                 int totalScans=RTI_RAID->getExportListCount();
                 int scansDone=0;
-                RTI_NETWORK->beginOverallTransfer(exportListTotalSize);
+                RTI_NETWORK->beginOverallTransfer();
 
                 RTI->log("Starting " + QString(alternatingUpdate ? "alternating" : "batched")
                          + " export: " + QString::number(totalScans) + " scan(s) scheduled, "
-                         + QString::number(exportListTotalSize) + " bytes total.");
+                         + QString::number(exportListTotalSize) + " bytes of primary scans (excludes any bundled adjustment scans).");
 
                 int cycle=0;
 

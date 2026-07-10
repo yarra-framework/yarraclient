@@ -54,11 +54,17 @@ public:
     // Used by the alternating/batched update loop (rds_processcontrol.cpp)
     // to have the copy dialog reflect progress across the whole update
     // instead of resetting for each cycle's queue directory contents.
-    // beginOverallTransfer()/endOverallTransfer() bracket the whole loop;
+    // beginOverallTransfer()/endOverallTransfer() bracket the whole loop.
+    // There's no upfront total byte count to seed this with - the RAID's
+    // export list only knows about primary scans, not the adjustment scans
+    // bundled in alongside them - so transferFiles() grows the total
+    // incrementally from each cycle's actual queue directory contents
+    // instead, which are already accurate since adjustment files are
+    // physically present there by the time it runs.
     // setScanProgress() is called once per cycle with the RAID's own scan
     // count, since a scan can produce more than one file (adjustment scan
     // bundling) and so doesn't map cleanly onto file counts.
-    void beginOverallTransfer(qint64 totalBytes);
+    void beginOverallTransfer();
     void endOverallTransfer();
     void setScanProgress(int scansDone, int totalScans);
 #endif

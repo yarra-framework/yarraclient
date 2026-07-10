@@ -56,11 +56,13 @@ rdsNetwork::~rdsNetwork()
 
 
 #ifdef YARRA_APP_RDS
-void rdsNetwork::beginOverallTransfer(qint64 totalBytes)
+void rdsNetwork::beginOverallTransfer()
 {
     overallTransferActive=true;
 
-    transferTotalBytes=totalBytes;
+    // No upfront total: transferFiles() grows this incrementally from each
+    // cycle's actual queue directory contents instead.
+    transferTotalBytes=0;
     transferBytesDone=0;
     transferFilesDone=0;
 
@@ -235,17 +237,27 @@ bool rdsNetwork::transferFiles()
 #ifdef YARRA_APP_RDS
     // Track progress across the whole transfer batch rather than just the
     // file currently being copied, so the dialog reflects overall
-    // completion instead of resetting to 0% for every file. If an alternating/
-    // batched update loop is tracking progress across the whole update
-    // instead (see beginOverallTransfer()), leave its running totals alone -
-    // they span multiple calls to this function, one per cycle.
-    if (!overallTransferActive)
+    // completion instead of resetting to 0% for every file.
+    qint64 thisCycleBytes=0;
+    for (int i=0; i<fileList.count(); i++)
     {
-        transferTotalBytes=0;
-        for (int i=0; i<fileList.count(); i++)
-        {
-            transferTotalBytes+=QFileInfo(queueDir, fileList.at(i)).size();
-        }
+        thisCycleBytes+=QFileInfo(queueDir, fileList.at(i)).size();
+    }
+
+    if (overallTransferActive)
+    {
+        // An alternating/batched update loop is tracking progress across
+        // the whole update instead of just this cycle. There's no reliable
+        // upfront total (the RAID export list doesn't know about adjustment
+        // scans bundled in alongside primary scans), so grow the running
+        // total by this cycle's actual queue directory contents - which are
+        // already accurate, since any bundled adjustment files are
+        // physically present there by now - rather than resetting it.
+        transferTotalBytes+=thisCycleBytes;
+    }
+    else
+    {
+        transferTotalBytes=thisCycleBytes;
         transferBytesDone=0;
         transferFilesDone=0;
     }
