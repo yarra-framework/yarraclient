@@ -54,10 +54,11 @@ rdsConfigurationWindow::rdsConfigurationWindow(QWidget *parent) :
     // past whatever size was picked here. Pin an explicit floor instead,
     // comfortably above the true minimum Windows reports once every tab is
     // accounted for, so the fixed-size window never needs to grow after
-    // construction, on this tab or any tab added later. Bump this if a
+    // construction, on this tab or any tab added later. Matches the .ui's
+    // own designer-time geometry - keep these two in sync; bump both if a
     // future row on any tab makes the window feel cramped or triggers a
     // "setGeometry: Unable to set geometry" warning again.
-    setFixedSize(580, 570);
+    setFixedSize(684, 658);
 
     // Center the window on the screen
     setGeometry(QStyle::alignedRect(Qt::LeftToRight,Qt::AlignCenter,size(),
