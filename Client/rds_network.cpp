@@ -371,12 +371,26 @@ bool rdsNetwork::transferFiles()
 
         transferFilesDone++;
 
-        // In overall-tracking mode the count display is scan-based (see
-        // setScanProgress()), since a scan can produce more than one file -
-        // file counts don't map cleanly onto it, so leave it alone here.
-        if ((copyDialog!=0) && (!overallTransferActive))
+        if (copyDialog!=0)
         {
-            copyDialog->setProgressCount(transferFilesDone, fileList.count());
+            if (overallTransferActive)
+            {
+                // The authoritative scan count only advances once this whole
+                // cycle's files have all finished (see setScanProgress()),
+                // since scans and files don't map 1:1 (adjustment scan
+                // bundling). Interpolate a provisional count from this
+                // cycle's own file progress in the meantime, so the label
+                // moves within a multi-scan cycle instead of jumping only at
+                // its end - it always lands exactly on the authoritative
+                // value once transferFilesDone reaches fileList.count().
+                int interpolatedScansDone=phaseScansBefore
+                    + int((qint64(phaseScansThisCycle)*transferFilesDone)/fileList.count());
+                copyDialog->setProgressCount(interpolatedScansDone, overallScansTotal);
+            }
+            else
+            {
+                copyDialog->setProgressCount(transferFilesDone, fileList.count());
+            }
         }
 #endif
 
