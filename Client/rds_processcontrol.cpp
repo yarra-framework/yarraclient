@@ -307,6 +307,7 @@ void rdsProcessControl::performUpdate()
                 int totalScans=RTI_RAID->getExportListCount();
                 int scansDone=0;
                 RTI_NETWORK->beginOverallTransfer();
+                RTI_NETWORK->setScanProgress(scansDone, totalScans);
 
                 RTI->log("Starting " + QString(alternatingUpdate ? "alternating" : "batched")
                          + " export: " + QString::number(totalScans) + " scan(s) scheduled, "

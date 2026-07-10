@@ -68,12 +68,28 @@ void rdsNetwork::beginOverallTransfer()
 
     overallScansDone=0;
     overallScansTotal=0;
+
+    // Own the dialog for the whole loop instead of letting transferFiles()
+    // flicker it closed and reopened every cycle. Every network phase during
+    // an overall-tracked loop uses STATE_NETWORKTRANSFER_ALTERNATING, so
+    // scanning is unsafe for its entire duration - no need to recheck this
+    // per cycle the way a standalone transfer does.
+    copyDialog=new rdsCopyDialog();
+    copyDialog->setScanningAllowed(false);
+    copyDialog->show();
 }
 
 
 void rdsNetwork::endOverallTransfer()
 {
     overallTransferActive=false;
+
+    if (copyDialog!=0)
+    {
+        copyDialog->setProgress(100);
+        copyDialog->close();
+        RDS_FREE(copyDialog);
+    }
 }
 
 
@@ -210,23 +226,33 @@ void rdsNetwork::closeConnection()
 bool rdsNetwork::transferFiles()
 {
 #ifdef YARRA_APP_RDS
-    copyDialog=new rdsCopyDialog();
+    // During an overall-tracked (alternating/batched) loop, beginOverallTransfer()
+    // already created and is showing a dialog that stays open for the whole
+    // loop, instead of flickering closed and reopened every cycle - so only
+    // create/show one here for a standalone (non-overall-tracked) transfer.
+    if (!overallTransferActive)
+    {
+        copyDialog=new rdsCopyDialog();
 
-    // Alternating mode interleaves RAID exports with per-file network
-    // transfers for the whole update, so it isn't safe to start a new scan
-    // during any part of it - not just while actually pulling data off the
-    // RAID. Match the same state check the operation window's status text
-    // uses (rds_operationwindow.cpp), so the two never contradict each other.
-    copyDialog->setScanningAllowed(RTI_CONTROL->getState()!=rdsProcessControl::STATE_NETWORKTRANSFER_ALTERNATING);
+        // Alternating mode interleaves RAID exports with per-file network
+        // transfers for the whole update, so it isn't safe to start a new scan
+        // during any part of it - not just while actually pulling data off the
+        // RAID. Match the same state check the operation window's status text
+        // uses (rds_operationwindow.cpp), so the two never contradict each other.
+        copyDialog->setScanningAllowed(RTI_CONTROL->getState()!=rdsProcessControl::STATE_NETWORKTRANSFER_ALTERNATING);
 
-    copyDialog->show();
+        copyDialog->show();
+    }
 #endif
 
     // Calling getQueueCount will also refresh the queue directory list.
     if (getQueueCount()==0)
     {
 #ifdef YARRA_APP_RDS
-        RDS_FREE(copyDialog);
+        if (!overallTransferActive)
+        {
+            RDS_FREE(copyDialog);
+        }
 #endif
         return true;
     }
@@ -357,8 +383,13 @@ bool rdsNetwork::transferFiles()
     fileList.clear();
 
 #ifdef YARRA_APP_RDS
-    copyDialog->close();
-    RDS_FREE(copyDialog);
+    // In overall-tracked mode, the dialog stays open across cycles -
+    // beginOverallTransfer()/endOverallTransfer() own its lifetime instead.
+    if (!overallTransferActive)
+    {
+        copyDialog->close();
+        RDS_FREE(copyDialog);
+    }
 #endif
 
     return true;
