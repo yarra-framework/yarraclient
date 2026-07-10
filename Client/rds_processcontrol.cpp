@@ -313,6 +313,15 @@ void rdsProcessControl::performUpdate()
                 int totalScans=RTI_RAID->getExportListCount();
                 int scansDone=0;
                 RTI_NETWORK->beginOverallTransfer();
+
+                // Every cycle in this loop interleaves RAID export with
+                // network transfer for the whole update, so scanning stays
+                // unsafe for its entire duration - both stages of every
+                // cycle, not just while actually pulling data off the RAID.
+                // Unlike normal mode, this never flips to true anywhere in
+                // this loop.
+                RTI_NETWORK->setScanningAllowed(false);
+
                 RTI_NETWORK->setScanProgress(scansDone, totalScans);
 
                 RTI->log("Starting " + QString(alternatingUpdate ? "alternating" : "batched")
