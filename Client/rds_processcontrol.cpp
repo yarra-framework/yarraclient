@@ -342,6 +342,12 @@ void rdsProcessControl::performUpdate()
 
                     int scansThisCycle=scansBeforeExport-RTI_RAID->getExportListCount();
 
+                    // Tell the progress bar which slice of the overall bar
+                    // this cycle's files occupy (each scan assumed to take an
+                    // equal 1/totalScans share - see setScanPhase()), before
+                    // transferFiles() starts animating within that slice.
+                    RTI_NETWORK->setScanPhase(scansDone, scansThisCycle, totalScans);
+
                     RTI->processEvents();
 
                     // Transfer the file(s) to the network

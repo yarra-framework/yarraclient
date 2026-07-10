@@ -46,6 +46,10 @@ rdsNetwork::rdsNetwork()
     overallTransferActive=false;
     overallScansDone=0;
     overallScansTotal=0;
+
+    phaseScansBefore=0;
+    phaseScansThisCycle=0;
+    phaseScansTotal=1;
 #endif
 }
 
@@ -60,14 +64,16 @@ void rdsNetwork::beginOverallTransfer()
 {
     overallTransferActive=true;
 
-    // No upfront total: transferFiles() grows this incrementally from each
-    // cycle's actual queue directory contents instead.
     transferTotalBytes=0;
     transferBytesDone=0;
     transferFilesDone=0;
 
     overallScansDone=0;
     overallScansTotal=0;
+
+    phaseScansBefore=0;
+    phaseScansThisCycle=0;
+    phaseScansTotal=1;
 
     // Own the dialog for the whole loop instead of letting transferFiles()
     // flicker it closed and reopened every cycle. Every network phase during
@@ -93,6 +99,22 @@ void rdsNetwork::endOverallTransfer()
 }
 
 
+void rdsNetwork::setScanPhase(int scansBeforeThisCycle, int scansThisCycle, int totalScans)
+{
+    phaseScansBefore=scansBeforeThisCycle;
+    phaseScansThisCycle=scansThisCycle;
+    phaseScansTotal=totalScans>0 ? totalScans : 1;
+
+    // Show where the overall bar stands as of the start of this cycle (0%
+    // progress within it) immediately, rather than waiting for the first
+    // byte to actually copy.
+    if (copyDialog!=0)
+    {
+        copyDialog->setProgress(computeDisplayPercent(0, 1));
+    }
+}
+
+
 void rdsNetwork::setScanProgress(int scansDone, int totalScans)
 {
     overallScansDone=scansDone;
@@ -101,6 +123,26 @@ void rdsNetwork::setScanProgress(int scansDone, int totalScans)
     if (copyDialog!=0)
     {
         copyDialog->setProgressCount(overallScansDone, overallScansTotal);
+    }
+}
+
+
+int rdsNetwork::computeDisplayPercent(qint64 bytesDone, qint64 totalBytes)
+{
+    double localFraction=(totalBytes>0) ? (double(bytesDone)/double(totalBytes)) : 1.0;
+
+    if (overallTransferActive)
+    {
+        // Assume each scan takes an equal share of the overall bar (no
+        // reliable total byte count exists - see setScanPhase()), and use
+        // the current cycle's own byte progress just to animate smoothly
+        // within its slice.
+        double overallFraction=(phaseScansBefore + phaseScansThisCycle*localFraction) / double(phaseScansTotal);
+        return int(qMin(99.0, overallFraction*100.0));
+    }
+    else
+    {
+        return int(qMin(99.0, localFraction*100.0));
     }
 }
 #endif
@@ -261,32 +303,18 @@ bool rdsNetwork::transferFiles()
     fileList=queueDir.entryList();
 
 #ifdef YARRA_APP_RDS
-    // Track progress across the whole transfer batch rather than just the
-    // file currently being copied, so the dialog reflects overall
-    // completion instead of resetting to 0% for every file.
-    qint64 thisCycleBytes=0;
+    // Track progress within this cycle's own queue directory contents.
+    // In overall-tracked mode this is only used to animate smoothly within
+    // the current scan phase's slice of the bar (see setScanPhase()/
+    // computeDisplayPercent()) - not as a global total - so it's always
+    // scoped to just this cycle, whether standalone or part of a larger loop.
+    transferTotalBytes=0;
     for (int i=0; i<fileList.count(); i++)
     {
-        thisCycleBytes+=QFileInfo(queueDir, fileList.at(i)).size();
+        transferTotalBytes+=QFileInfo(queueDir, fileList.at(i)).size();
     }
-
-    if (overallTransferActive)
-    {
-        // An alternating/batched update loop is tracking progress across
-        // the whole update instead of just this cycle. There's no reliable
-        // upfront total (the RAID export list doesn't know about adjustment
-        // scans bundled in alongside primary scans), so grow the running
-        // total by this cycle's actual queue directory contents - which are
-        // already accurate, since any bundled adjustment files are
-        // physically present there by now - rather than resetting it.
-        transferTotalBytes+=thisCycleBytes;
-    }
-    else
-    {
-        transferTotalBytes=thisCycleBytes;
-        transferBytesDone=0;
-        transferFilesDone=0;
-    }
+    transferBytesDone=0;
+    transferFilesDone=0;
 
     if (copyDialog!=0)
     {
@@ -555,31 +583,31 @@ bool rdsNetwork::copyFile()
             // QFile::copy() doesn't report real progress, so estimate this
             // file's own completion from its size and the throughput
             // measured from previous transfers (see below). That estimate is
-            // then folded into the overall transfer's progress (bytes done
-            // from already-completed files, plus this file's estimated
-            // partial progress, over the whole batch's total size), so the
-            // dialog reflects the whole transfer rather than resetting to 0%
-            // for every file. Simulated scan files copy at real local-disk
-            // speed, which would make the learned throughput estimate (and
-            // the bar) race ahead immediately - use a fixed, visibly slow
-            // duration instead so there's something to actually watch while
-            // testing.
+            // folded into this cycle's own progress (bytes done from already-
+            // completed files in this cycle, plus this file's estimated
+            // partial progress, over this cycle's total size) via
+            // computeDisplayPercent(), which maps it into the whole update's
+            // progress when an overall-tracked loop is active (see
+            // setScanPhase()) or uses it directly otherwise. Simulated scan
+            // files copy at real local-disk speed, which would make the
+            // learned throughput estimate (and the bar) race ahead
+            // immediately - use a fixed, visibly slow duration instead so
+            // there's something to actually watch while testing.
             qint64 estimatedMs=RTI->isSimulation() ? 4000
                 : qMax(qint64(500), (srcinfo.size()*1000)/estimatedBytesPerSec);
 
             QTimer progressTimer;
             if ((copyDialog!=0) && (transferTotalBytes>0))
             {
-                // Show where the overall transfer stands as of the start of
-                // this file (0% progress within it) immediately, rather than
-                // waiting for the timer's first tick.
-                copyDialog->setProgress(int(qMin(qint64(99), (transferBytesDone*100)/transferTotalBytes)));
+                // Show where the bar stands as of the start of this file (0%
+                // progress within it) immediately, rather than waiting for
+                // the timer's first tick.
+                copyDialog->setProgress(computeDisplayPercent(transferBytesDone, transferTotalBytes));
 
                 connect(&progressTimer, &QTimer::timeout, this, [this, &ti, &srcinfo, estimatedMs]()
                 {
                     qint64 fileBytesEstimate=qMin(srcinfo.size(), (srcinfo.size()*ti.elapsed())/estimatedMs);
-                    int percent=int(qMin(qint64(99), ((transferBytesDone+fileBytesEstimate)*100)/transferTotalBytes));
-                    copyDialog->setProgress(percent);
+                    copyDialog->setProgress(computeDisplayPercent(transferBytesDone+fileBytesEstimate, transferTotalBytes));
                 });
                 progressTimer.start(200);
             }
