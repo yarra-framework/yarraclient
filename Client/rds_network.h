@@ -75,6 +75,12 @@ public:
     void endOverallTransfer();
     void setScanPhase(int scansBeforeThisCycle, int scansThisCycle, int totalScans);
     void setScanProgress(int scansDone, int totalScans);
+
+    // Lets a caller update the persistent dialog's scanning-allowed text
+    // mid-transfer, for callers (e.g. normal mode) whose safety state
+    // changes partway through an overall-tracked sequence rather than
+    // staying fixed for its whole duration the way alternating mode does.
+    void setScanningAllowed(bool allowed);
 #endif
 
 private:

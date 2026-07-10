@@ -115,6 +115,15 @@ void rdsNetwork::setScanPhase(int scansBeforeThisCycle, int scansThisCycle, int 
 }
 
 
+void rdsNetwork::setScanningAllowed(bool allowed)
+{
+    if (copyDialog!=0)
+    {
+        copyDialog->setScanningAllowed(allowed);
+    }
+}
+
+
 void rdsNetwork::setScanProgress(int scansDone, int totalScans)
 {
     overallScansDone=scansDone;

@@ -275,6 +275,12 @@ void rdsProcessControl::performUpdate()
 
             bool exportSuccessful=true;
 
+            // Only used for the normal (non-alternating, non-batched) path -
+            // see the else branch below and the point right before the
+            // trailing transferFiles() call further down.
+            bool usingOverallTrackingForNormalMode=false;
+            int totalScansNormal=0;
+
             qint64 maxBatchBytes=qint64(RTI_CONFIG->netMaxQueueSizeGb * 1000000000.0);
 
             // Batching only makes sense if there's actually more to export
@@ -381,6 +387,20 @@ void rdsProcessControl::performUpdate()
             }
             else
             {
+                // Show the copy dialog for the whole export+transfer
+                // sequence too, for consistency with alternating/batched
+                // mode - it would otherwise only appear once network
+                // transfer starts, silently skipping the RAID export phase
+                // (which can take a while and, like alternating mode, isn't
+                // safe to scan during). Treated as one single "cycle"
+                // spanning every scheduled scan.
+                totalScansNormal=RTI_RAID->getExportListCount();
+                usingOverallTrackingForNormalMode=true;
+
+                RTI_NETWORK->beginOverallTransfer();
+                RTI_NETWORK->setScanningAllowed(false); // matches STATE_RAIDTRANSFER, set above
+                RTI_NETWORK->setScanProgress(0, totalScansNormal);
+
                 // Export all scheduled scans to the queue directory
                 exportSuccessful=RTI_RAID->processTotalExportList();
             }
@@ -414,6 +434,16 @@ void rdsProcessControl::performUpdate()
                 RDS_FREE(activityWindow);
             }
 
+            if (usingOverallTrackingForNormalMode)
+            {
+                // Export is done and we're about to transfer everything at
+                // once - scanning is safe again from here, matching
+                // STATE_NETWORKTRANSFER below. Treat the whole transfer as
+                // one single phase spanning every scan.
+                RTI_NETWORK->setScanningAllowed(true);
+                RTI_NETWORK->setScanPhase(0, totalScansNormal, totalScansNormal);
+            }
+
             setState(STATE_NETWORKTRANSFER);
             RTI->updateInfoUI();
             RTI->processEvents();
@@ -421,6 +451,12 @@ void rdsProcessControl::performUpdate()
             // Again, clean up the queue directoy
             bool was_error = RTI->isSevereErrors();
             RTI_NETWORK->transferFiles();
+
+            if (usingOverallTrackingForNormalMode)
+            {
+                RTI_NETWORK->setScanProgress(totalScansNormal, totalScansNormal);
+                RTI_NETWORK->endOverallTransfer();
+            }
 
             if (!was_error && RTI->isSevereErrors()) {
                 QString configFileData;
