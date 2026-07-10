@@ -11,6 +11,7 @@
 #include "rds_exechelper.h"
 
 #include <QElapsedTimer>
+#include <QRandomGenerator>
 
 #ifdef YARRA_APP_RDS
     #include "rds_checksum.h"
@@ -614,9 +615,10 @@ bool rdsNetwork::copyFile()
             // setScanPhase()) or uses it directly otherwise. Simulated scan
             // files copy at real local-disk speed, which would make the
             // learned throughput estimate (and the bar) race ahead
-            // immediately - use a fixed, visibly slow duration instead so
-            // there's something to actually watch while testing.
-            qint64 estimatedMs=RTI->isSimulation() ? 4000
+            // immediately - use a randomized, visibly slow duration instead
+            // (simulating variable network conditions) so there's something
+            // to actually watch while testing.
+            qint64 estimatedMs=RTI->isSimulation() ? (1000+QRandomGenerator::global()->bounded(5000))
                 : qMax(qint64(500), (srcinfo.size()*1000)/estimatedBytesPerSec);
 
             QTimer progressTimer;
