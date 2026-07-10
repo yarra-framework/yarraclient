@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>430</width>
-    <height>50</height>
+    <width>626</width>
+    <height>56</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -100,7 +100,7 @@
           <item>
            <widget class="QLabel" name="textLabel">
             <property name="text">
-             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Transferring raw data to a remote server. Scanning is allowed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Transferring data to remote server. Scanning is allowed.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
             </property>
             <property name="textFormat">
              <enum>Qt::RichText</enum>
