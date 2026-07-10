@@ -341,12 +341,6 @@ void rdsProcessControl::performUpdate()
                     }
 
                     int scansThisCycle=scansBeforeExport-RTI_RAID->getExportListCount();
-                    scansDone+=scansThisCycle;
-                    RTI_NETWORK->setScanProgress(scansDone, totalScans);
-
-                    RTI->log("Cycle " + QString::number(cycle) + ": exported " + QString::number(scansThisCycle)
-                             + " scan(s) (" + QString::number(scansDone) + "/" + QString::number(totalScans)
-                             + " total so far), " + QString::number(RTI_RAID->getExportListCount()) + " scan(s) remaining.");
 
                     RTI->processEvents();
 
@@ -354,6 +348,18 @@ void rdsProcessControl::performUpdate()
                     setState(STATE_NETWORKTRANSFER_ALTERNATING);
                     RTI_NETWORK->transferFiles();
                     RTI->processEvents();
+
+                    // Only count scans as done once their files have actually
+                    // finished transferring - not as soon as they're exported
+                    // off the RAID - so the X/Y count doesn't jump ahead of
+                    // what the byte-based progress bar shows and then sit
+                    // there through the whole network transfer.
+                    scansDone+=scansThisCycle;
+                    RTI_NETWORK->setScanProgress(scansDone, totalScans);
+
+                    RTI->log("Cycle " + QString::number(cycle) + ": transferred " + QString::number(scansThisCycle)
+                             + " scan(s) (" + QString::number(scansDone) + "/" + QString::number(totalScans)
+                             + " total so far), " + QString::number(RTI_RAID->getExportListCount()) + " scan(s) remaining.");
                 }
 
                 RTI_NETWORK->endOverallTransfer();
