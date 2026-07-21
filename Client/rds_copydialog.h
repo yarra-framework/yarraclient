@@ -16,6 +16,11 @@ public:
     explicit rdsCopyDialog(QWidget *parent = 0);
     ~rdsCopyDialog();
 
+public slots:
+    void setProgress(int percent);
+    void setProgressCount(int completed, int total);
+    void setScanningAllowed(bool allowed);
+
 private:
     Ui::rdsCopyDialog *ui;
 };
