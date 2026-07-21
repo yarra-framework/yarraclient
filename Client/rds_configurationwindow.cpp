@@ -47,6 +47,19 @@ rdsConfigurationWindow::rdsConfigurationWindow(QWidget *parent) :
 #endif
     ui->versionLabel->setText(versionText);
 
+    // A tab page's layout is only activated once actually shown, so
+    // sizeHint()/minimumSizeHint() queried here don't yet reflect less
+    // frequently visited tabs (e.g. Network) whose content is taller than
+    // the default tab - switching to them later would then grow the window
+    // past whatever size was picked here. Pin an explicit floor instead,
+    // comfortably above the true minimum Windows reports once every tab is
+    // accounted for, so the fixed-size window never needs to grow after
+    // construction, on this tab or any tab added later. Matches the .ui's
+    // own designer-time geometry - keep these two in sync; bump both if a
+    // future row on any tab makes the window feel cramped or triggers a
+    // "setGeometry: Unable to set geometry" warning again.
+    setFixedSize(684, 658);
+
     // Center the window on the screen
     setGeometry(QStyle::alignedRect(Qt::LeftToRight,Qt::AlignCenter,size(),
                                     qApp->desktop()->availableGeometry()));

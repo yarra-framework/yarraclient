@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>684</width>
-    <height>486</height>
+    <height>658</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -57,6 +57,54 @@
        <property name="verticalSpacing">
         <number>7</number>
        </property>
+       <item row="0" column="2">
+        <widget class="QLineEdit" name="systemNameEdit">
+         <property name="inputMask">
+          <string>NNNNNNNNNNNNNNNNNNNN</string>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="2">
+        <widget class="QLineEdit" name="softwareVersionEdit">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="5" column="0" colspan="2">
+        <widget class="QLabel" name="label_8">
+         <property name="text">
+          <string>Update Rule:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="0">
+        <widget class="QLabel" name="serialNumberLabel">
+         <property name="text">
+          <string>Serial Number:</string>
+         </property>
+        </widget>
+       </item>
+       <item row="3" column="2">
+        <widget class="QCheckBox" name="indicatorCheckbox">
+         <property name="text">
+          <string>Show RDS indicator icon on screen</string>
+         </property>
+        </widget>
+       </item>
+       <item row="2" column="2">
+        <widget class="QLineEdit" name="serialNumberEdit">
+         <property name="enabled">
+          <bool>false</bool>
+         </property>
+         <property name="readOnly">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
        <item row="0" column="0" colspan="2">
         <widget class="QLabel" name="label_2">
          <property name="minimumSize">
@@ -67,13 +115,6 @@
          </property>
          <property name="text">
           <string>System Name:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="serialNumberLabel">
-         <property name="text">
-          <string>Serial Number:</string>
          </property>
         </widget>
        </item>
@@ -109,16 +150,6 @@
          </item>
         </widget>
        </item>
-       <item row="2" column="2">
-        <widget class="QLineEdit" name="serialNumberEdit">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
        <item row="4" column="0" colspan="3">
         <widget class="Line" name="line_3">
          <property name="minimumSize">
@@ -129,6 +160,13 @@
          </property>
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
+         </property>
+        </widget>
+       </item>
+       <item row="1" column="0" colspan="2">
+        <widget class="QLabel" name="label_3">
+         <property name="text">
+          <string>Software Version:</string>
          </property>
         </widget>
        </item>
@@ -153,46 +191,6 @@
              </property>
             </widget>
            </item>
-           <item row="4" column="1">
-            <widget class="QSpinBox" name="jitterSpinbox">
-             <property name="minimum">
-              <number>1</number>
-             </property>
-             <property name="maximum">
-              <number>24</number>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="3">
-            <spacer name="horizontalSpacer_3">
-             <property name="orientation">
-              <enum>Qt::Horizontal</enum>
-             </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Fixed</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>180</width>
-               <height>20</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item row="1" column="0">
-            <widget class="QCheckBox" name="time2Checkbox">
-             <property name="text">
-              <string>Time 2</string>
-             </property>
-            </widget>
-           </item>
-           <item row="0" column="1">
-            <widget class="QTimeEdit" name="time1Edit">
-             <property name="calendarPopup">
-              <bool>false</bool>
-             </property>
-            </widget>
-           </item>
            <item row="4" column="0">
             <widget class="QCheckBox" name="jitterTimesCheckbox">
              <property name="text">
@@ -200,10 +198,10 @@
              </property>
             </widget>
            </item>
-           <item row="4" column="2">
-            <widget class="QLabel" name="jitterLabel">
+           <item row="1" column="0">
+            <widget class="QCheckBox" name="time2Checkbox">
              <property name="text">
-              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hours&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+              <string>Time 2</string>
              </property>
             </widget>
            </item>
@@ -213,12 +211,6 @@
               <string>Time 3</string>
              </property>
             </widget>
-           </item>
-           <item row="2" column="1">
-            <widget class="QTimeEdit" name="time3Edit"/>
-           </item>
-           <item row="1" column="1">
-            <widget class="QTimeEdit" name="time2Edit"/>
            </item>
            <item row="3" column="0" colspan="2">
             <widget class="Line" name="line_5">
@@ -230,6 +222,36 @@
              </property>
              <property name="orientation">
               <enum>Qt::Horizontal</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QTimeEdit" name="time1Edit">
+             <property name="calendarPopup">
+              <bool>false</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QTimeEdit" name="time3Edit"/>
+           </item>
+           <item row="1" column="1">
+            <widget class="QTimeEdit" name="time2Edit"/>
+           </item>
+           <item row="4" column="1">
+            <widget class="QSpinBox" name="jitterSpinbox">
+             <property name="minimum">
+              <number>1</number>
+             </property>
+             <property name="maximum">
+              <number>24</number>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="2">
+            <widget class="QLabel" name="jitterLabel">
+             <property name="text">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;hours&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
              </property>
             </widget>
            </item>
@@ -295,37 +317,6 @@
          <widget class="QWidget" name="pageManually"/>
         </widget>
        </item>
-       <item row="1" column="2">
-        <widget class="QLineEdit" name="softwareVersionEdit">
-         <property name="enabled">
-          <bool>false</bool>
-         </property>
-         <property name="readOnly">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="5" column="0" colspan="2">
-        <widget class="QLabel" name="label_8">
-         <property name="text">
-          <string>Update Rule:</string>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="2">
-        <widget class="QLineEdit" name="systemNameEdit">
-         <property name="inputMask">
-          <string>NNNNNNNNNNNNNNNNNNNN</string>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0" colspan="2">
-        <widget class="QLabel" name="label_3">
-         <property name="text">
-          <string>Software Version:</string>
-         </property>
-        </widget>
-       </item>
        <item row="7" column="2">
         <spacer name="verticalSpacer_6">
          <property name="orientation">
@@ -341,29 +332,6 @@
           </size>
          </property>
         </spacer>
-       </item>
-       <item row="6" column="0">
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>60</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="3" column="2">
-        <widget class="QCheckBox" name="indicatorCheckbox">
-         <property name="text">
-          <string>Show RDS indicator icon on screen</string>
-         </property>
-        </widget>
        </item>
       </layout>
      </widget>
@@ -765,22 +733,6 @@ p, li { white-space: pre-wrap; }
             </layout>
            </item>
            <item>
-            <spacer name="verticalSpacer_16">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Fixed</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>10</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
             <layout class="QHBoxLayout" name="horizontalLayout_5">
              <item>
               <widget class="QLabel" name="label_17">
@@ -802,6 +754,9 @@ p, li { white-space: pre-wrap; }
            </item>
            <item>
             <layout class="QHBoxLayout" name="horizontalLayout_11">
+             <property name="spacing">
+              <number>7</number>
+             </property>
              <property name="topMargin">
               <number>0</number>
              </property>
@@ -824,23 +779,10 @@ p, li { white-space: pre-wrap; }
             </layout>
            </item>
            <item>
-            <spacer name="verticalSpacer_12">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
+            <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,1">
+             <property name="spacing">
+              <number>1</number>
              </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Minimum</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>4</height>
-              </size>
-             </property>
-            </spacer>
-           </item>
-           <item>
-            <layout class="QHBoxLayout" name="horizontalLayout_2">
              <item>
               <spacer name="horizontalSpacer_4">
                <property name="orientation">
@@ -864,7 +806,7 @@ p, li { white-space: pre-wrap; }
 &lt;html&gt;&lt;head&gt;&lt;meta name=&quot;qrichtext&quot; content=&quot;1&quot; /&gt;&lt;style type=&quot;text/css&quot;&gt;
 p, li { white-space: pre-wrap; }
 &lt;/style&gt;&lt;/head&gt;&lt;body style=&quot; font-family:'MS Shell Dlg 2'; font-size:8pt; font-weight:400; font-style:normal;&quot;&gt;
-&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Note: &lt;/span&gt;These commands will be executed before/after each transfer and can be used to connect/disconnect network drives. To learn about the syntax, type &amp;quot;net use / help&amp;quot; in a command shell.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;p style=&quot; margin-top:0px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;Note: &lt;/span&gt;These commands will be executed before/after each transfer and can be used to connect/disconnect network drives. To learn about the syntax, type &amp;quot;net use /help&amp;quot; in a command shell.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
                </property>
                <property name="alignment">
                 <set>Qt::AlignJustify|Qt::AlignVCenter</set>
@@ -881,22 +823,6 @@ p, li { white-space: pre-wrap; }
               </widget>
              </item>
             </layout>
-           </item>
-           <item>
-            <spacer name="verticalSpacer_4">
-             <property name="orientation">
-              <enum>Qt::Vertical</enum>
-             </property>
-             <property name="sizeType">
-              <enum>QSizePolicy::Fixed</enum>
-             </property>
-             <property name="sizeHint" stdset="0">
-              <size>
-               <width>20</width>
-               <height>10</height>
-              </size>
-             </property>
-            </spacer>
            </item>
            <item>
             <widget class="QCheckBox" name="networkRerunStartupCmdsCheckbox">
@@ -1205,22 +1131,6 @@ p, li { white-space: pre-wrap; }
          </item>
         </layout>
        </item>
-       <item>
-        <spacer name="verticalSpacer_8">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::MinimumExpanding</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>40</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
       </layout>
      </widget>
      <widget class="QWidget" name="logServerTab">
@@ -1387,7 +1297,7 @@ p, li { white-space: pre-wrap; }
         <widget class="QPushButton" name="logServerTestConnectionButton">
          <property name="maximumSize">
           <size>
-           <width>100</width>
+           <width>200</width>
            <height>16777215</height>
           </size>
          </property>
@@ -1678,19 +1588,6 @@ p, li { white-space: pre-wrap; }
             <bool>true</bool>
            </property>
           </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_7">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
          </item>
         </layout>
        </item>
