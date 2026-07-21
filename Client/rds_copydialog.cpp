@@ -21,6 +21,7 @@ rdsCopyDialog::rdsCopyDialog(QWidget *parent) :
 
     setGeometry(QStyle::alignedRect(Qt::LeftToRight, Qt::AlignRight | Qt::AlignBottom, size(), qApp->primaryScreen()->availableGeometry()));
 
+    connect(ui->dismissButton, &QPushButton::clicked, this, &rdsCopyDialog::close);
 }
 
 rdsCopyDialog::~rdsCopyDialog()
