@@ -168,6 +168,8 @@ void rdsConfigurationWindow::readConfiguration()
     ui->networkRemoteConfigLabelEdit->setText(config.netRemoteConfigFile);
     ui->networkRerunStartupCmdsCheckbox->setChecked(config.netDriveStartupCmdsAfterFail);
     ui->networkBufferPathEdit->setText(config.netDriveLocalBufferPath);
+    ui->networkAlternatingDiskLimitSpinbox->setValue(config.netAlternatingDiskLimitGb);
+    ui->networkWarningDiskLimitSpinbox->setValue(config.netWarningDiskLimitGb);
 
     ui->updateCombobox->setCurrentIndex(config.infoUpdateMode);
     ui->updatePeriodCombobox->setCurrentIndex(config.infoUpdatePeriodUnit);
@@ -216,6 +218,8 @@ void rdsConfigurationWindow::storeConfiguration()
     config.netRemoteConfigFile=ui->networkRemoteConfigLabelEdit->text();
     config.netDriveStartupCmdsAfterFail=ui->networkRerunStartupCmdsCheckbox->isChecked();
     config.netDriveLocalBufferPath=ui->networkBufferPathEdit->text();
+    config.netAlternatingDiskLimitGb=ui->networkAlternatingDiskLimitSpinbox->value();
+    config.netWarningDiskLimitGb=ui->networkWarningDiskLimitSpinbox->value();
 
     config.logServerPath=ui->logServerPathEdit->text();
     config.logApiKey=ui->logServerApiKeyEdit->text();
