@@ -275,23 +275,74 @@ void rdsProcessControl::performUpdate()
 
             bool exportSuccessful=true;
 
+            // Only used for the normal (non-alternating) path - see the else
+            // branch below and the point right before the trailing
+            // transferFiles() call further down.
+            bool usingOverallTrackingForNormalMode=false;
+            int totalScansNormal=0;
+
             // Decide if files should be exported and transfered at once
             // of if the files should be exported and transfered one by one.
             if (alternatingUpdate)
             {
+                // Have the copy dialog track progress against the whole
+                // update's scan list, not just whatever's queued for the
+                // current cycle. Scans (not files) are the unit tracked here
+                // since a single scan can produce more than one file via
+                // adjustment-scan bundling, which doesn't map cleanly onto a
+                // file count known upfront. The dialog stays open for the
+                // whole loop instead of flickering closed and reopened per
+                // cycle.
+                int totalScans=RTI_RAID->getExportListCount();
+                int scansDone=0;
+                RTI_NETWORK->beginOverallTransfer();
+
+                // Every cycle interleaves RAID export with network transfer
+                // for the whole update, so scanning stays unsafe for its
+                // entire duration - both stages of every cycle, not just
+                // while actually pulling data off the RAID.
+                RTI_NETWORK->setScanningAllowed(false);
+
+                RTI_NETWORK->setScanProgress(scansDone, totalScans);
+
+                int cycle=0;
+
                 // Loop over all scans scheduled for the export
                 while ((exportSuccessful) && (!RTI->isPostponementRequested()) && (RTI_RAID->exportsAvailable()))
                 {
-                    // Save one file to the queue directory
+                    cycle++;
+
+                    // Save one scan to the queue directory
                     setState(STATE_RAIDTRANSFER);
+
+                    int scansBeforeExport=RTI_RAID->getExportListCount();
                     exportSuccessful=RTI_RAID->processExportListEntry();
+                    int scansThisCycle=scansBeforeExport-RTI_RAID->getExportListCount();
+
+                    // Tell the progress bar which slice of the overall bar
+                    // this cycle's files occupy (each scan assumed to take an
+                    // equal 1/totalScans share - see setScanPhase()), before
+                    // transferFiles() starts animating within that slice.
+                    RTI_NETWORK->setScanPhase(scansDone, scansThisCycle, totalScans);
+
                     RTI->processEvents();
 
-                    // Transfer the file to the network
+                    // Transfer the file(s) to the network
                     setState(STATE_NETWORKTRANSFER_ALTERNATING);
                     RTI_NETWORK->transferFiles();
                     RTI->processEvents();
+
+                    // Only count scans as done once their files have actually
+                    // finished transferring - not as soon as they're exported
+                    // off the RAID - so the X/Y count doesn't jump ahead of
+                    // what the byte-based progress bar shows and then sit
+                    // there through the whole network transfer.
+                    scansDone+=scansThisCycle;
+                    RTI_NETWORK->setScanProgress(scansDone, totalScans);
                 }
+
+                RTI_NETWORK->endOverallTransfer();
+
                 if (RTI->isPostponementRequested())
                 {
                     RTI->log("Received postponement request. Stopping update.");
@@ -299,6 +350,20 @@ void rdsProcessControl::performUpdate()
             }
             else
             {
+                // Show the copy dialog for the whole export+transfer
+                // sequence too, for consistency with alternating mode - it
+                // would otherwise only appear once network transfer starts,
+                // silently skipping the RAID export phase (which can take a
+                // while and, like alternating mode, isn't safe to scan
+                // during). Treated as one single "cycle" spanning every
+                // scheduled scan.
+                totalScansNormal=RTI_RAID->getExportListCount();
+                usingOverallTrackingForNormalMode=true;
+
+                RTI_NETWORK->beginOverallTransfer();
+                RTI_NETWORK->setScanningAllowed(false); // matches STATE_RAIDTRANSFER, set above
+                RTI_NETWORK->setScanProgress(0, totalScansNormal);
+
                 // Export all scheduled scans to the queue directory
                 exportSuccessful=RTI_RAID->processTotalExportList();
             }
@@ -332,6 +397,16 @@ void rdsProcessControl::performUpdate()
                 RDS_FREE(activityWindow);
             }
 
+            if (usingOverallTrackingForNormalMode)
+            {
+                // Export is done and we're about to transfer everything at
+                // once - scanning is safe again from here, matching
+                // STATE_NETWORKTRANSFER below. Treat the whole transfer as
+                // one single phase spanning every scan.
+                RTI_NETWORK->setScanningAllowed(true);
+                RTI_NETWORK->setScanPhase(0, totalScansNormal, totalScansNormal);
+            }
+
             setState(STATE_NETWORKTRANSFER);
             RTI->updateInfoUI();
             RTI->processEvents();
@@ -339,6 +414,12 @@ void rdsProcessControl::performUpdate()
             // Again, clean up the queue directoy
             bool was_error = RTI->isSevereErrors();
             RTI_NETWORK->transferFiles();
+
+            if (usingOverallTrackingForNormalMode)
+            {
+                RTI_NETWORK->setScanProgress(totalScansNormal, totalScansNormal);
+                RTI_NETWORK->endOverallTransfer();
+            }
 
             if (!was_error && RTI->isSevereErrors()) {
                 QString configFileData;

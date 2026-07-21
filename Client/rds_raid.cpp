@@ -1002,9 +1002,72 @@ bool rdsRaid::processExportListEntry()
 }
 
 
+bool rdsRaid::processExportListBatch(qint64 maxBatchBytes)
+{
+    bool result=true;
+    qint64 batchBytes=0;
+    int scansInBatch=0;
+
+    RTI->debug("Starting export batch: target size " + QString::number(maxBatchBytes)
+               + " bytes, " + QString::number(exportList.count()) + " scan(s) remaining overall.");
+
+    // Pull scans one at a time (each call still goes through the regular
+    // single-scan export path, so adjustment-scan bundling etc. behaves
+    // exactly as it does for a plain single-scan export), but keep going
+    // until the cumulative size of this batch reaches maxBatchBytes. Always
+    // export at least one scan regardless of size, so a single scan larger
+    // than maxBatchBytes can't stall the batch forever. Bundled adjustment
+    // scans aren't counted in batchBytes, so the true amount queued can run
+    // slightly over maxBatchBytes - this is a budget, not a hard ceiling.
+    while ((result==true) && (exportList.count()>0) && ((batchBytes==0) || (batchBytes<maxBatchBytes)))
+    {
+        qint64 nextScanSize=getRaidEntry(getFirstExportEntry()->raidIndex)->size;
+        batchBytes+=nextScanSize;
+        scansInBatch++;
+
+        RTI->debug("  Adding scan " + QString::number(scansInBatch) + " to batch: " + QString::number(nextScanSize)
+                   + " bytes (running batch total " + QString::number(batchBytes) + "/" + QString::number(maxBatchBytes) + " bytes)");
+
+        result=exportScanFromList();
+
+        RTI->processEvents();
+        if (RTI->isPostponementRequested())
+        {
+            RTI->log("Received postponement request. Stopping update.");
+            RTI_NETLOG.postEvent(EventInfo::Type::Update, EventInfo::Detail::Information, EventInfo::Severity::Success, "Postpone requested");
+            break;
+        }
+    }
+
+    RTI->log("Finished export batch: " + QString::number(scansInBatch) + " scan(s), "
+             + QString::number(batchBytes) + " bytes total, " + QString::number(exportList.count()) + " scan(s) remaining.");
+
+    return result;
+}
+
+
 bool rdsRaid::exportsAvailable()
 {
     return (exportList.count()>0);
+}
+
+
+qint64 rdsRaid::getExportListTotalSize()
+{
+    qint64 totalSize=0;
+
+    for (int i=0; i<exportList.count(); i++)
+    {
+        totalSize+=getRaidEntry(exportList.at(i)->raidIndex)->size;
+    }
+
+    return totalSize;
+}
+
+
+int rdsRaid::getExportListCount()
+{
+    return exportList.count();
 }
 
 

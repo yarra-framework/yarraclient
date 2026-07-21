@@ -15,6 +15,7 @@
 #ifdef YARRA_APP_RDS
     #include "rds_checksum.h"
     #include "rds_copydialog.h"
+    #include "rds_processcontrol.h"
 #endif
 
 
@@ -41,6 +42,14 @@ rdsNetwork::rdsNetwork()
     transferTotalBytes=0;
     transferBytesDone=0;
     transferFilesDone=0;
+
+    overallTransferActive=false;
+    overallScansDone=0;
+    overallScansTotal=0;
+
+    phaseScansBefore=0;
+    phaseScansThisCycle=0;
+    phaseScansTotal=1;
 #endif
 }
 
@@ -48,6 +57,104 @@ rdsNetwork::rdsNetwork()
 rdsNetwork::~rdsNetwork()
 {
 }
+
+
+#ifdef YARRA_APP_RDS
+void rdsNetwork::beginOverallTransfer()
+{
+    overallTransferActive=true;
+
+    transferTotalBytes=0;
+    transferBytesDone=0;
+    transferFilesDone=0;
+
+    overallScansDone=0;
+    overallScansTotal=0;
+
+    phaseScansBefore=0;
+    phaseScansThisCycle=0;
+    phaseScansTotal=1;
+
+    // Own the dialog for the whole loop instead of letting transferFiles()
+    // flicker it closed and reopened every cycle. Every network phase during
+    // an overall-tracked loop uses STATE_NETWORKTRANSFER_ALTERNATING, so
+    // scanning is unsafe for its entire duration - no need to recheck this
+    // per cycle the way a standalone transfer does.
+    copyDialog=new rdsCopyDialog();
+    copyDialog->setScanningAllowed(false);
+    copyDialog->show();
+}
+
+
+void rdsNetwork::endOverallTransfer()
+{
+    overallTransferActive=false;
+
+    if (copyDialog!=0)
+    {
+        copyDialog->setProgress(100);
+        copyDialog->close();
+        RDS_FREE(copyDialog);
+    }
+}
+
+
+void rdsNetwork::setScanPhase(int scansBeforeThisCycle, int scansThisCycle, int totalScans)
+{
+    phaseScansBefore=scansBeforeThisCycle;
+    phaseScansThisCycle=scansThisCycle;
+    phaseScansTotal=totalScans>0 ? totalScans : 1;
+
+    // Show where the overall bar stands as of the start of this cycle (0%
+    // progress within it) immediately, rather than waiting for the first
+    // byte to actually copy.
+    if (copyDialog!=0)
+    {
+        copyDialog->setProgress(computeDisplayPercent(0, 1));
+    }
+}
+
+
+void rdsNetwork::setScanningAllowed(bool allowed)
+{
+    if (copyDialog!=0)
+    {
+        copyDialog->setScanningAllowed(allowed);
+    }
+}
+
+
+void rdsNetwork::setScanProgress(int scansDone, int totalScans)
+{
+    overallScansDone=scansDone;
+    overallScansTotal=totalScans;
+
+    if (copyDialog!=0)
+    {
+        copyDialog->setProgressCount(overallScansDone, overallScansTotal);
+    }
+}
+
+
+int rdsNetwork::computeDisplayPercent(qint64 bytesDone, qint64 totalBytes)
+{
+    double localFraction=(totalBytes>0) ? (double(bytesDone)/double(totalBytes)) : 1.0;
+
+    if (overallTransferActive)
+    {
+        // Assume each scan takes an equal share of the overall bar (no
+        // reliable total byte count exists - see setScanPhase()), and use
+        // the current cycle's own byte progress just to animate smoothly
+        // within its slice.
+        double overallFraction=(phaseScansBefore + phaseScansThisCycle*localFraction) / double(phaseScansTotal);
+        return int(qMin(99.0, overallFraction*100.0));
+    }
+    else
+    {
+        return int(qMin(99.0, localFraction*100.0));
+    }
+}
+#endif
 
 
 bool rdsNetwork::setLocalBufferPath(QString bufferPath)
@@ -170,15 +277,33 @@ void rdsNetwork::closeConnection()
 bool rdsNetwork::transferFiles()
 {
 #ifdef YARRA_APP_RDS
-    copyDialog=new rdsCopyDialog();
-    copyDialog->show();
+    // During an overall-tracked (alternating/batched) loop, beginOverallTransfer()
+    // already created and is showing a dialog that stays open for the whole
+    // loop, instead of flickering closed and reopened every cycle - so only
+    // create/show one here for a standalone (non-overall-tracked) transfer.
+    if (!overallTransferActive)
+    {
+        copyDialog=new rdsCopyDialog();
+
+        // Alternating mode interleaves RAID exports with per-file network
+        // transfers for the whole update, so it isn't safe to start a new scan
+        // during any part of it - not just while actually pulling data off the
+        // RAID. Match the same state check the operation window's status text
+        // uses (rds_operationwindow.cpp), so the two never contradict each other.
+        copyDialog->setScanningAllowed(RTI_CONTROL->getState()!=rdsProcessControl::STATE_NETWORKTRANSFER_ALTERNATING);
+
+        copyDialog->show();
+    }
 #endif
 
     // Calling getQueueCount will also refresh the queue directory list.
     if (getQueueCount()==0)
     {
 #ifdef YARRA_APP_RDS
-        RDS_FREE(copyDialog);
+        if (!overallTransferActive)
+        {
+            RDS_FREE(copyDialog);
+        }
 #endif
         return true;
     }
@@ -187,9 +312,11 @@ bool rdsNetwork::transferFiles()
     fileList=queueDir.entryList();
 
 #ifdef YARRA_APP_RDS
-    // Track progress across the whole transfer batch rather than just the
-    // file currently being copied, so the dialog reflects overall
-    // completion instead of resetting to 0% for every file.
+    // Track progress within this cycle's own queue directory contents.
+    // In overall-tracked mode this is only used to animate smoothly within
+    // the current scan phase's slice of the bar (see setScanPhase()/
+    // computeDisplayPercent()) - not as a global total - so it's always
+    // scoped to just this cycle, whether standalone or part of a larger loop.
     transferTotalBytes=0;
     for (int i=0; i<fileList.count(); i++)
     {
@@ -198,7 +325,17 @@ bool rdsNetwork::transferFiles()
     transferBytesDone=0;
     transferFilesDone=0;
 
-    copyDialog->setProgressCount(transferFilesDone, fileList.count());
+    if (copyDialog!=0)
+    {
+        if (overallTransferActive)
+        {
+            copyDialog->setProgressCount(overallScansDone, overallScansTotal);
+        }
+        else
+        {
+            copyDialog->setProgressCount(transferFilesDone, fileList.count());
+        }
+    }
 #endif
 
     bool success=true;
@@ -233,16 +370,37 @@ bool rdsNetwork::transferFiles()
         //RTI->log("DBG: Deleted file");
 
 #ifdef YARRA_APP_RDS
-        // Count this file's bytes toward the overall transfer regardless of
-        // whether it succeeded, so the aggregate percentage keeps moving
-        // forward and doesn't stall on a single failed file.
+        // Count this file toward the overall transfer regardless of whether
+        // it succeeded, so the aggregate progress keeps moving forward and
+        // doesn't stall on a single failed file.
         if (currentFilesize>0)
         {
             transferBytesDone+=currentFilesize;
         }
 
         transferFilesDone++;
-        copyDialog->setProgressCount(transferFilesDone, fileList.count());
+
+        if (copyDialog!=0)
+        {
+            if (overallTransferActive)
+            {
+                // The authoritative scan count only advances once this whole
+                // cycle's files have all finished (see setScanProgress()),
+                // since scans and files don't map 1:1 (adjustment scan
+                // bundling). Interpolate a provisional count from this
+                // cycle's own file progress in the meantime, so the label
+                // moves within a multi-scan cycle instead of jumping only at
+                // its end - it always lands exactly on the authoritative
+                // value once transferFilesDone reaches fileList.count().
+                int interpolatedScansDone=phaseScansBefore
+                    + int((qint64(phaseScansThisCycle)*transferFilesDone)/fileList.count());
+                copyDialog->setProgressCount(interpolatedScansDone, overallScansTotal);
+            }
+            else
+            {
+                copyDialog->setProgressCount(transferFilesDone, fileList.count());
+            }
+        }
 #endif
 
         QString temp_filename = currentFilename;
@@ -261,12 +419,28 @@ bool rdsNetwork::transferFiles()
 
     //RTI->log("DBG: Left loop");
 
+#ifdef YARRA_APP_RDS
+    // Finishing this cycle's queue directory doesn't mean the whole update
+    // is done when an alternating/batched loop is tracking overall progress
+    // across multiple cycles - only force a clean 100%/full-count finish for
+    // a standalone (non-overall-tracked) transfer.
+    if (!overallTransferActive)
+    {
+        copyDialog->setProgress(100);
+        copyDialog->setProgressCount(fileList.count(), fileList.count());
+    }
+#endif
+
     fileList.clear();
 
 #ifdef YARRA_APP_RDS
-    copyDialog->setProgress(100);
-    copyDialog->close();
-    RDS_FREE(copyDialog);
+    // In overall-tracked mode, the dialog stays open across cycles -
+    // beginOverallTransfer()/endOverallTransfer() own its lifetime instead.
+    if (!overallTransferActive)
+    {
+        copyDialog->close();
+        RDS_FREE(copyDialog);
+    }
 #endif
 
     return true;
@@ -432,31 +606,32 @@ bool rdsNetwork::copyFile()
             // QFile::copy() doesn't report real progress, so estimate this
             // file's own completion from its size and the throughput
             // measured from previous transfers (see below). That estimate is
-            // then folded into the overall transfer's progress (bytes done
-            // from already-completed files, plus this file's estimated
-            // partial progress, over the whole batch's total size), so the
-            // dialog reflects the whole transfer rather than resetting to 0%
-            // for every file. Simulated scan files copy at real local-disk
-            // speed, which would make the learned throughput estimate (and
-            // the bar) race ahead immediately - use a randomized, visibly slow
-            // duration instead (simulating variable network conditions) so
-            // there's something to actually watch while testing.
+            // folded into this cycle's own progress (bytes done from already-
+            // completed files in this cycle, plus this file's estimated
+            // partial progress, over this cycle's total size) via
+            // computeDisplayPercent(), which maps it into the whole update's
+            // progress when an overall-tracked loop is active (see
+            // setScanPhase()) or uses it directly otherwise. Simulated scan
+            // files copy at real local-disk speed, which would make the
+            // learned throughput estimate (and the bar) race ahead
+            // immediately - use a randomized, visibly slow duration instead
+            // (simulating variable network conditions) so there's something
+            // to actually watch while testing.
             qint64 estimatedMs=RTI->isSimulation() ? (1000+qrand() % 5000)
                 : qMax(qint64(500), (srcinfo.size()*1000)/estimatedBytesPerSec);
 
             QTimer progressTimer;
             if ((copyDialog!=0) && (transferTotalBytes>0))
             {
-                // Show where the overall transfer stands as of the start of
-                // this file (0% progress within it) immediately, rather than
-                // waiting for the timer's first tick.
-                copyDialog->setProgress(int(qMin(qint64(99), (transferBytesDone*100)/transferTotalBytes)));
+                // Show where the bar stands as of the start of this file (0%
+                // progress within it) immediately, rather than waiting for
+                // the timer's first tick.
+                copyDialog->setProgress(computeDisplayPercent(transferBytesDone, transferTotalBytes));
 
                 connect(&progressTimer, &QTimer::timeout, this, [this, &ti, &srcinfo, estimatedMs]()
                 {
                     qint64 fileBytesEstimate=qMin(srcinfo.size(), (srcinfo.size()*ti.elapsed())/estimatedMs);
-                    int percent=int(qMin(qint64(99), ((transferBytesDone+fileBytesEstimate)*100)/transferTotalBytes));
-                    copyDialog->setProgress(percent);
+                    copyDialog->setProgress(computeDisplayPercent(transferBytesDone+fileBytesEstimate, transferTotalBytes));
                 });
                 progressTimer.start(200);
             }
