@@ -36,6 +36,12 @@ void rdsApplication::respond(const QString &message)
 
 int main(int argc, char *argv[])
 {
+    // Qt5 does not scale widget layouts to the display's DPI setting unless
+    // explicitly enabled (Qt6 does this by default). Must be set before the
+    // QApplication instance is constructed.
+    QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+    QCoreApplication::setAttribute(Qt::AA_UseHighDpiPixmaps);
+
     // NOTE: A slight modification has been introduced to QtSingleApplication
     //       in the .activateWindow() method. It was necessary to add a call
     //       to .show() because otherwise the operation window remains hidden.
