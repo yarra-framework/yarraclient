@@ -85,6 +85,12 @@ void rdsConfiguration::loadConfiguration()
     netAlternatingDiskLimitGb=settings.value("Network/AlternatingDiskLimitGb", 0.0).toDouble();
     netWarningDiskLimitGb    =settings.value("Network/WarningDiskLimitGb",     0.0).toDouble();
 
+    // Batch size (in GB) for alternating mode: instead of pulling exactly one
+    // scan from the RAID per cycle, pull scans up to this cumulative size
+    // before transferring. A value of 0 keeps the original one-scan-at-a-time
+    // behavior.
+    netMaxQueueSizeGb=settings.value("Network/MaxQueueSizeGb", 0.0).toDouble();
+
     logServerPath          =settings.value("LogServer/ServerPath",         "").toString();
     logApiKey              =settings.value("LogServer/ApiKey",             "").toString();
     logSendScanInfo        =settings.value("LogServer/SendScanInfo",       true).toBool();
@@ -196,6 +202,7 @@ void rdsConfiguration::saveConfiguration()
     settings.setValue("Network/DriveStartupCmdsAfterFail",netDriveStartupCmdsAfterFail);
     settings.setValue("Network/AlternatingDiskLimitGb", netAlternatingDiskLimitGb);
     settings.setValue("Network/WarningDiskLimitGb",     netWarningDiskLimitGb);
+    settings.setValue("Network/MaxQueueSizeGb",         netMaxQueueSizeGb);
     settings.setValue("Network/RemoteConfigFile",     netRemoteConfigFile);
     settings.setValue("Network/RemoteLpfiFile",       netRemoteLpfiFile);
 

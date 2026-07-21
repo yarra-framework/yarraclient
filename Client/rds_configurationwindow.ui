@@ -1167,6 +1167,45 @@ p, li { white-space: pre-wrap; }
         </layout>
        </item>
        <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_15">
+         <item>
+          <widget class="QLabel" name="networkMaxQueueSizeLabel">
+           <property name="minimumSize">
+            <size>
+             <width>140</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Max Queue Batch Size: </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="networkMaxQueueSizeSpinbox">
+           <property name="toolTip">
+            <string>Pull scans from the RAID in batches of up to this cumulative size before transferring, instead of exporting everything at once. Applies regardless of disk space. If disk space is critically low, exactly one scan at a time is always used instead, no matter what this is set to. A value of 0 disables batching: everything is exported at once when disk space is fine, or one scan at a time when it's low.</string>
+           </property>
+           <property name="specialValueText">
+            <string>Disabled (export everything at once)</string>
+           </property>
+           <property name="suffix">
+            <string> GB</string>
+           </property>
+           <property name="decimals">
+            <number>2</number>
+           </property>
+           <property name="maximum">
+            <double>1000.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
         <spacer name="verticalSpacer_8">
          <property name="orientation">
           <enum>Qt::Vertical</enum>

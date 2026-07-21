@@ -275,35 +275,58 @@ void rdsProcessControl::performUpdate()
 
             bool exportSuccessful=true;
 
-            // Only used for the normal (non-alternating) path - see the else
-            // branch below and the point right before the trailing
-            // transferFiles() call further down.
+            // Only used for the normal (non-alternating, non-batched) path -
+            // see the else branch below and the point right before the
+            // trailing transferFiles() call further down.
             bool usingOverallTrackingForNormalMode=false;
             int totalScansNormal=0;
 
-            // Decide if files should be exported and transfered at once
-            // of if the files should be exported and transfered one by one.
-            if (alternatingUpdate)
+            qint64 maxBatchBytes=qint64(RTI_CONFIG->netMaxQueueSizeGb * 1000000000.0);
+
+            // Batching only makes sense if there's actually more to export
+            // than fits in one batch - otherwise it would all go out in a
+            // single batch anyway, so just use the normal all-at-once path
+            // instead of the extra RAID/network round trip overhead.
+            qint64 exportListTotalSize=RTI_RAID->getExportListTotalSize();
+            bool useBatching=(RTI_CONFIG->netMaxQueueSizeGb > 0.0) && (exportListTotalSize > maxBatchBytes);
+
+            RTI->log("Export mode decision: exportListTotalSize=" + QString::number(exportListTotalSize)
+                     + " bytes, netMaxQueueSizeGb=" + QString::number(RTI_CONFIG->netMaxQueueSizeGb)
+                     + " (maxBatchBytes=" + QString::number(maxBatchBytes) + " bytes)"
+                     + ", alternatingUpdate=" + (alternatingUpdate ? "true" : "false")
+                     + ", useBatching=" + (useBatching ? "true" : "false"));
+
+            // Decide if files should be exported and transfered at once, in
+            // batches, or one by one. A configured batch size is honored
+            // independently of low disk space - but low disk space always
+            // wins and forces exactly one scan at a time regardless of the
+            // configured batch size, since that's the safety-critical path
+            // where maximum conservatism matters more than fewer round trips.
+            if ((alternatingUpdate) || (useBatching))
             {
                 // Have the copy dialog track progress against the whole
                 // update's scan list, not just whatever's queued for the
                 // current cycle. Scans (not files) are the unit tracked here
                 // since a single scan can produce more than one file via
                 // adjustment-scan bundling, which doesn't map cleanly onto a
-                // file count known upfront. The dialog stays open for the
-                // whole loop instead of flickering closed and reopened per
-                // cycle.
+                // file count known upfront.
                 int totalScans=RTI_RAID->getExportListCount();
                 int scansDone=0;
                 RTI_NETWORK->beginOverallTransfer();
 
-                // Every cycle interleaves RAID export with network transfer
-                // for the whole update, so scanning stays unsafe for its
-                // entire duration - both stages of every cycle, not just
-                // while actually pulling data off the RAID.
+                // Every cycle in this loop interleaves RAID export with
+                // network transfer for the whole update, so scanning stays
+                // unsafe for its entire duration - both stages of every
+                // cycle, not just while actually pulling data off the RAID.
+                // Unlike normal mode, this never flips to true anywhere in
+                // this loop.
                 RTI_NETWORK->setScanningAllowed(false);
 
                 RTI_NETWORK->setScanProgress(scansDone, totalScans);
+
+                RTI->log("Starting " + QString(alternatingUpdate ? "alternating" : "batched")
+                         + " export: " + QString::number(totalScans) + " scan(s) scheduled, "
+                         + QString::number(exportListTotalSize) + " bytes of primary scans (excludes any bundled adjustment scans).");
 
                 int cycle=0;
 
@@ -312,11 +335,26 @@ void rdsProcessControl::performUpdate()
                 {
                     cycle++;
 
-                    // Save one scan to the queue directory
+                    // Save one scan - or, if a batch size is configured and
+                    // disk space isn't critically low, up to that much
+                    // cumulative size - to the queue directory
                     setState(STATE_RAIDTRANSFER);
 
                     int scansBeforeExport=RTI_RAID->getExportListCount();
-                    exportSuccessful=RTI_RAID->processExportListEntry();
+
+                    if (alternatingUpdate)
+                    {
+                        if (RTI_CONFIG->netMaxQueueSizeGb > 0.0)
+                        {
+                            RTI->log("Cycle " + QString::number(cycle) + ": low disk space active - ignoring configured batch size, exporting one scan at a time.");
+                        }
+                        exportSuccessful=RTI_RAID->processExportListEntry();
+                    }
+                    else
+                    {
+                        exportSuccessful=RTI_RAID->processExportListBatch(maxBatchBytes);
+                    }
+
                     int scansThisCycle=scansBeforeExport-RTI_RAID->getExportListCount();
 
                     // Tell the progress bar which slice of the overall bar
@@ -339,9 +377,17 @@ void rdsProcessControl::performUpdate()
                     // there through the whole network transfer.
                     scansDone+=scansThisCycle;
                     RTI_NETWORK->setScanProgress(scansDone, totalScans);
+
+                    RTI->log("Cycle " + QString::number(cycle) + ": transferred " + QString::number(scansThisCycle)
+                             + " scan(s) (" + QString::number(scansDone) + "/" + QString::number(totalScans)
+                             + " total so far), " + QString::number(RTI_RAID->getExportListCount()) + " scan(s) remaining.");
                 }
 
                 RTI_NETWORK->endOverallTransfer();
+
+                RTI->log("Finished " + QString(alternatingUpdate ? "alternating" : "batched")
+                         + " export after " + QString::number(cycle) + " cycle(s): "
+                         + QString::number(scansDone) + "/" + QString::number(totalScans) + " scan(s) processed.");
 
                 if (RTI->isPostponementRequested())
                 {
@@ -351,12 +397,12 @@ void rdsProcessControl::performUpdate()
             else
             {
                 // Show the copy dialog for the whole export+transfer
-                // sequence too, for consistency with alternating mode - it
-                // would otherwise only appear once network transfer starts,
-                // silently skipping the RAID export phase (which can take a
-                // while and, like alternating mode, isn't safe to scan
-                // during). Treated as one single "cycle" spanning every
-                // scheduled scan.
+                // sequence too, for consistency with alternating/batched
+                // mode - it would otherwise only appear once network
+                // transfer starts, silently skipping the RAID export phase
+                // (which can take a while and, like alternating mode, isn't
+                // safe to scan during). Treated as one single "cycle"
+                // spanning every scheduled scan.
                 totalScansNormal=RTI_RAID->getExportListCount();
                 usingOverallTrackingForNormalMode=true;
 

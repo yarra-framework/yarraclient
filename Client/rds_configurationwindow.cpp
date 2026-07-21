@@ -170,6 +170,7 @@ void rdsConfigurationWindow::readConfiguration()
     ui->networkBufferPathEdit->setText(config.netDriveLocalBufferPath);
     ui->networkAlternatingDiskLimitSpinbox->setValue(config.netAlternatingDiskLimitGb);
     ui->networkWarningDiskLimitSpinbox->setValue(config.netWarningDiskLimitGb);
+    ui->networkMaxQueueSizeSpinbox->setValue(config.netMaxQueueSizeGb);
 
     ui->updateCombobox->setCurrentIndex(config.infoUpdateMode);
     ui->updatePeriodCombobox->setCurrentIndex(config.infoUpdatePeriodUnit);
@@ -220,6 +221,7 @@ void rdsConfigurationWindow::storeConfiguration()
     config.netDriveLocalBufferPath=ui->networkBufferPathEdit->text();
     config.netAlternatingDiskLimitGb=ui->networkAlternatingDiskLimitSpinbox->value();
     config.netWarningDiskLimitGb=ui->networkWarningDiskLimitSpinbox->value();
+    config.netMaxQueueSizeGb=ui->networkMaxQueueSizeSpinbox->value();
 
     config.logServerPath=ui->logServerPathEdit->text();
     config.logApiKey=ui->logServerApiKeyEdit->text();
