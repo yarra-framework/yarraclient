@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>684</width>
-    <height>658</height>
+    <height>694</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -1101,6 +1101,45 @@ p, li { white-space: pre-wrap; }
            </property>
            <property name="specialValueText">
             <string>Disabled (export everything at once)</string>
+           </property>
+           <property name="suffix">
+            <string> GB</string>
+           </property>
+           <property name="decimals">
+            <number>2</number>
+           </property>
+           <property name="maximum">
+            <double>1000.000000000000000</double>
+           </property>
+           <property name="singleStep">
+            <double>0.100000000000000</double>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item>
+        <layout class="QHBoxLayout" name="horizontalLayout_16">
+         <item>
+          <widget class="QLabel" name="networkMinFreeSpaceLabel">
+           <property name="minimumSize">
+            <size>
+             <width>140</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="text">
+            <string>Min Free Space (Batch): </string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QDoubleSpinBox" name="networkMinFreeSpaceSpinbox">
+           <property name="toolTip">
+            <string>While building a batch, stop adding scans once free space on the local buffer drive would drop below this amount, and transfer what has been queued so far instead. Works alongside Max Queue Batch Size as another trigger for ending the current batch. A value of 0 disables this check.</string>
+           </property>
+           <property name="specialValueText">
+            <string>Disabled</string>
            </property>
            <property name="suffix">
             <string> GB</string>

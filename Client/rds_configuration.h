@@ -68,6 +68,7 @@ public:
     double  netAlternatingDiskLimitGb;
     double  netWarningDiskLimitGb;
     double  netMaxQueueSizeGb;
+    double  netMinFreeSpaceGb;
 
     QString logServerPath;
     QString logApiKey;

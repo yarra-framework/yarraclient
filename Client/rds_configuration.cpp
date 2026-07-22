@@ -91,6 +91,12 @@ void rdsConfiguration::loadConfiguration()
     // behavior.
     netMaxQueueSizeGb=settings.value("Network/MaxQueueSizeGb", 0.0).toDouble();
 
+    // Minimum free space (in GB) to try to maintain on the local buffer
+    // drive while building a batch: another trigger, alongside
+    // netMaxQueueSizeGb, for cutting a batch short and transferring what has
+    // been queued so far. A value of 0 disables this check.
+    netMinFreeSpaceGb=settings.value("Network/MinFreeSpaceGb", 0.0).toDouble();
+
     logServerPath          =settings.value("LogServer/ServerPath",         "").toString();
     logApiKey              =settings.value("LogServer/ApiKey",             "").toString();
     logSendScanInfo        =settings.value("LogServer/SendScanInfo",       true).toBool();
@@ -203,6 +209,7 @@ void rdsConfiguration::saveConfiguration()
     settings.setValue("Network/AlternatingDiskLimitGb", netAlternatingDiskLimitGb);
     settings.setValue("Network/WarningDiskLimitGb",     netWarningDiskLimitGb);
     settings.setValue("Network/MaxQueueSizeGb",         netMaxQueueSizeGb);
+    settings.setValue("Network/MinFreeSpaceGb",         netMinFreeSpaceGb);
     settings.setValue("Network/RemoteConfigFile",     netRemoteConfigFile);
     settings.setValue("Network/RemoteLpfiFile",       netRemoteLpfiFile);
 

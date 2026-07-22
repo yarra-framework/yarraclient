@@ -282,6 +282,7 @@ void rdsProcessControl::performUpdate()
             int totalScansNormal=0;
 
             qint64 maxBatchBytes=qint64(RTI_CONFIG->netMaxQueueSizeGb * 1000000000.0);
+            qint64 minFreeSpaceBytes=qint64(RTI_CONFIG->netMinFreeSpaceGb * 1000000000.0);
 
             // Batching only makes sense if there's actually more to export
             // than fits in one batch - otherwise it would all go out in a
@@ -293,6 +294,8 @@ void rdsProcessControl::performUpdate()
             RTI->log("Export mode decision: exportListTotalSize=" + QString::number(exportListTotalSize)
                      + " bytes, netMaxQueueSizeGb=" + QString::number(RTI_CONFIG->netMaxQueueSizeGb)
                      + " (maxBatchBytes=" + QString::number(maxBatchBytes) + " bytes)"
+                     + ", netMinFreeSpaceGb=" + QString::number(RTI_CONFIG->netMinFreeSpaceGb)
+                     + " (minFreeSpaceBytes=" + QString::number(minFreeSpaceBytes) + " bytes)"
                      + ", alternatingUpdate=" + (alternatingUpdate ? "true" : "false")
                      + ", useBatching=" + (useBatching ? "true" : "false"));
 
@@ -352,7 +355,7 @@ void rdsProcessControl::performUpdate()
                     }
                     else
                     {
-                        exportSuccessful=RTI_RAID->processExportListBatch(maxBatchBytes);
+                        exportSuccessful=RTI_RAID->processExportListBatch(maxBatchBytes, minFreeSpaceBytes);
                     }
 
                     int scansThisCycle=scansBeforeExport-RTI_RAID->getExportListCount();

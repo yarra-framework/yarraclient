@@ -1002,25 +1002,43 @@ bool rdsRaid::processExportListEntry()
 }
 
 
-bool rdsRaid::processExportListBatch(qint64 maxBatchBytes)
+bool rdsRaid::processExportListBatch(qint64 maxBatchBytes, qint64 minFreeSpaceBytes)
 {
     bool result=true;
     qint64 batchBytes=0;
     int scansInBatch=0;
 
     RTI->debug("Starting export batch: target size " + QString::number(maxBatchBytes)
+               + " bytes, minimum free space to maintain " + QString::number(minFreeSpaceBytes)
                + " bytes, " + QString::number(exportList.count()) + " scan(s) remaining overall.");
 
     // Pull scans one at a time (each call still goes through the regular
     // single-scan export path, so adjustment-scan bundling etc. behaves
     // exactly as it does for a plain single-scan export), but keep going
-    // until the cumulative size of this batch reaches maxBatchBytes. Always
-    // export at least one scan regardless of size, so a single scan larger
-    // than maxBatchBytes can't stall the batch forever. Bundled adjustment
-    // scans aren't counted in batchBytes, so the true amount queued can run
-    // slightly over maxBatchBytes - this is a budget, not a hard ceiling.
+    // until the cumulative size of this batch reaches maxBatchBytes, or free
+    // disk space would drop below minFreeSpaceBytes, whichever comes first.
+    // Always export at least one scan regardless of either limit, so a
+    // single scan bigger than the budget - or disk space already below the
+    // configured minimum before the batch even starts - can't stall the
+    // batch forever. Bundled adjustment scans aren't counted in batchBytes,
+    // so the true amount queued can run slightly over maxBatchBytes - this
+    // is a budget, not a hard ceiling. Free space is checked directly
+    // against the real disk rather than simulated from batchBytes, since it
+    // isn't affected by that same under-count.
     while ((result==true) && (exportList.count()>0) && ((batchBytes==0) || (batchBytes<maxBatchBytes)))
     {
+        if ((batchBytes>0) && (minFreeSpaceBytes>0))
+        {
+            qint64 freeSpace=RTI->getFreeDiskSpace(queueDir.absolutePath());
+
+            if (freeSpace<minFreeSpaceBytes)
+            {
+                RTI->debug("  Stopping batch: free disk space (" + QString::number(freeSpace)
+                           + " bytes) would drop below the configured minimum (" + QString::number(minFreeSpaceBytes) + " bytes).");
+                break;
+            }
+        }
+
         qint64 nextScanSize=getRaidEntry(getFirstExportEntry()->raidIndex)->size;
         batchBytes+=nextScanSize;
         scansInBatch++;

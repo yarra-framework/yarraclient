@@ -58,7 +58,7 @@ rdsConfigurationWindow::rdsConfigurationWindow(QWidget *parent) :
     // own designer-time geometry - keep these two in sync; bump both if a
     // future row on any tab makes the window feel cramped or triggers a
     // "setGeometry: Unable to set geometry" warning again.
-    setFixedSize(684, 658);
+    setFixedSize(684, 694);
 
     // Center the window on the screen
     setGeometry(QStyle::alignedRect(Qt::LeftToRight,Qt::AlignCenter,size(),
@@ -184,6 +184,7 @@ void rdsConfigurationWindow::readConfiguration()
     ui->networkAlternatingDiskLimitSpinbox->setValue(config.netAlternatingDiskLimitGb);
     ui->networkWarningDiskLimitSpinbox->setValue(config.netWarningDiskLimitGb);
     ui->networkMaxQueueSizeSpinbox->setValue(config.netMaxQueueSizeGb);
+    ui->networkMinFreeSpaceSpinbox->setValue(config.netMinFreeSpaceGb);
 
     ui->updateCombobox->setCurrentIndex(config.infoUpdateMode);
     ui->updatePeriodCombobox->setCurrentIndex(config.infoUpdatePeriodUnit);
@@ -235,6 +236,7 @@ void rdsConfigurationWindow::storeConfiguration()
     config.netAlternatingDiskLimitGb=ui->networkAlternatingDiskLimitSpinbox->value();
     config.netWarningDiskLimitGb=ui->networkWarningDiskLimitSpinbox->value();
     config.netMaxQueueSizeGb=ui->networkMaxQueueSizeSpinbox->value();
+    config.netMinFreeSpaceGb=ui->networkMinFreeSpaceSpinbox->value();
 
     config.logServerPath=ui->logServerPathEdit->text();
     config.logApiKey=ui->logServerApiKeyEdit->text();

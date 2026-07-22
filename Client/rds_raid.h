@@ -56,7 +56,7 @@ public:
     bool createExportList();
     bool processTotalExportList();
     bool processExportListEntry();
-    bool processExportListBatch(qint64 maxBatchBytes);
+    bool processExportListBatch(qint64 maxBatchBytes, qint64 minFreeSpaceBytes);
     bool exportsAvailable();
     qint64 getExportListTotalSize();
     int getExportListCount();
