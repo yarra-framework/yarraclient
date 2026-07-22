@@ -9,6 +9,7 @@
 
 #include "yd_test.h"
 #include "yd_test_systeminfo.h"
+#include "yd_test_networkshares.h"
 #include "yd_test_syngo.h"
 #include "yd_test_yarra.h"
 #include "yd_test_ort.h"
@@ -63,6 +64,7 @@ void ydMainWindow::composeTests()
     testRunner.testList.append(new ydTestRDS);
     testRunner.testList.append(new ydTestLogServer);
     testRunner.testList.append(new ydTestSysteminfo);
+    testRunner.testList.append(new ydTestNetworkShares);
     testRunner.testList.append(new ydTestLogs);
 }
 
