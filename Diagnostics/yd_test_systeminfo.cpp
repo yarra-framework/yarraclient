@@ -54,6 +54,23 @@ bool ydTestSysteminfo::run(QString& issues, QString& results)
     }
     YD_RESULT_ENDSECTION
 
+    // Check mapped network drives
+    {
+        YD_RESULT_STARTSECTION
+        YD_ADDRESULT("<u>Network shares:</u>")
+        rdsExecHelper execHelper;
+        QString command = "net use";
+        execHelper.setCommand(command);
+        execHelper.run();
+        YD_ADDRESULT_LINE("<div style=\"font-family: monospace; color: #CCC; background-color: #141414; \">");
+        for (int i=0; i<execHelper.output.length(); i++)
+        {
+            YD_ADDRESULT_LINE(execHelper.output.at(i));
+        }
+        YD_ADDRESULT_LINE("</div>");
+        YD_RESULT_ENDSECTION
+    }
+
     // Check network configuration / DNS settings
     {
         YD_RESULT_STARTSECTION

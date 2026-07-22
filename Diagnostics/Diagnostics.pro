@@ -26,7 +26,6 @@ SOURCES += main.cpp \
     yd_mainwindow.cpp \
     yd_test.cpp \
     yd_test_systeminfo.cpp \
-    yd_test_networkshares.cpp \
     yd_test_syngo.cpp \
     yd_test_yarra.cpp \
     yd_test_ort.cpp \
@@ -51,7 +50,6 @@ HEADERS  += \
     yd_global.h \
     yd_test.h \
     yd_test_systeminfo.h \
-    yd_test_networkshares.h \
     yd_test_syngo.h \
     yd_test_yarra.h \
     yd_test_ort.h \
