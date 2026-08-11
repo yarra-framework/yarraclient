@@ -60,6 +60,7 @@ public:
         RDS_XA51A,
         RDS_XA60A,
         RDS_XA61A,
+        RDS_XB10A,
         RDS_SYNGOVERSIONS_COUNT
     };
 
@@ -68,7 +69,8 @@ public:
         RDS_VB   = 0,
         RDS_VD   = 1,
         RDS_VE   = 2,
-        RDS_XA   = 3
+        RDS_XA   = 3,
+        RDS_XB   = 3
     };
 
     enum rdsRaidToolFormat
@@ -127,6 +129,7 @@ public:
     bool    isSyngoVDLine();
     bool    isSyngoVELine();
     bool    isSyngoXALine();
+    bool    isSyngoXBLine();
 
     QString getSyngoImagerIP();
     int     getRaidToolFormat();
@@ -506,7 +509,9 @@ inline QString rdsRuntimeInformation::getSyngoMRVersionString(int syngoVersionEn
     case RDS_XA61A:
         versionString="XA61A";
         break;
-
+    case RDS_XB10A:
+        versionString="XB10A";
+        break;
     default:
         versionString="Unknown - Use with care!";
         break;
@@ -537,6 +542,11 @@ inline bool rdsRuntimeInformation::isSyngoVELine()
 inline bool rdsRuntimeInformation::isSyngoXALine()
 {
     return (syngoMRLine==RDS_XA);
+}
+
+inline bool rdsRuntimeInformation::isSyngoXBLine()
+{
+    return (syngoMRLine==RDS_XB);
 }
 
 
@@ -617,6 +627,7 @@ inline int rdsRuntimeInformation::getRaidToolFormat()
     case RDS_XA51A:
     case RDS_XA60A:
     case RDS_XA61A:
+    case RDS_XB10A:
         return RDS_RAIDTOOL_VE;
         break;
     case RDS_VB15A:
@@ -674,6 +685,9 @@ inline int rdsRuntimeInformation::getSyngoMRLine()
     case RDS_XA51A:
     case RDS_XA60A:
     case RDS_XA61A:
+        return RDS_XA;
+        break;
+    case RDS_XB10A:
         return RDS_XA;
         break;
     }

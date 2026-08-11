@@ -98,8 +98,7 @@ rdsOperationWindow::rdsOperationWindow(QWidget *parent, bool isFirstRun) :
         control.setStartTime();
         updateInfoUI();
 
-        log.log("System "+config.infoName+" / Serial # "+config.infoSerialNumber);
-
+        log.log("System "+config.infoName+" / Serial # "+config.infoSerialNumber + " (" + RTI->getSyngoMRVersionString() + ")");
         // Send the version number and name along with the boot notification
         QString dataString="<data>";
         dataString+="<version>"       +QString(RDS_VERSION)                   +"</version>";
@@ -109,6 +108,7 @@ rdsOperationWindow::rdsOperationWindow(QWidget *parent, bool isFirstRun) :
         dataString+="<system_version>"+RTI->getSyngoMRVersionString()         +"</system_version>";
         dataString+="<system_vendor>Siemens</system_vendor>";
         dataString+="<time>"          +QDateTime::currentDateTime().toString()+"</time>";
+        dataString+="<config><![CDATA[ "+RTI_NETWORK->getConfigFileData()     +"]]></config>";
         dataString+="</data>";
         RTI_NETLOG.postEvent(EventInfo::Type::Boot,EventInfo::Detail::Information,EventInfo::Severity::Success,"Ver "+QString(RDS_VERSION),dataString);
 

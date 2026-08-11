@@ -59,7 +59,7 @@ rdsRaid::rdsRaid()
     else
     {
         // The new Syngo version uses a different path for the binaries where the RaidTool is located
-        if (RTI->isSyngoXALine())
+        if (RTI->isSyngoXALine() || (RTI->isSyngoXBLine()))
         {
             raidToolCmd=QDir::toNativeSeparators( RTI->getSyngoXABinPath()+QString("/") ) + RDS_RAIDTOOL_NAME;
         }
@@ -329,7 +329,7 @@ bool rdsRaid::saveRaidFile(int fileID, QString filename, bool saveAdjustments, b
     cmd << "-o " + filePath;
 
     // For the VD line, add option for inclusion of adjustment scans
-    if ((RTI->isSyngoVDLine()) || (RTI->isSyngoVELine()) || (RTI->isSyngoXALine()))
+    if ((RTI->isSyngoVDLine()) || (RTI->isSyngoVELine()) || (RTI->isSyngoXALine()) || (RTI->isSyngoXBLine()))
     {
         if (saveAdjustments)
         {
@@ -338,7 +338,7 @@ bool rdsRaid::saveRaidFile(int fileID, QString filename, bool saveAdjustments, b
     }
 
     // For the VD/VE line and VB20P, add options for anonymization
-    if ((RTI->isSyngoVDLine()) || (RTI->isSyngoVELine() || (RTI->isSyngoXALine()))
+    if ((RTI->isSyngoVDLine()) || (RTI->isSyngoVELine() || (RTI->isSyngoXALine()) || (RTI->isSyngoXBLine()))
         || (RTI->getSyngoMRVersion()==rdsRuntimeInformation::RDS_VB20P)
         || (RTI->getSyngoMRVersion()==rdsRuntimeInformation::RDS_VB19A)
         || (RTI->getSyngoMRVersion()==rdsRuntimeInformation::RDS_VB19B))
@@ -475,7 +475,7 @@ bool rdsRaid::readRaidList()
     if ((RTI->getSyngoMRVersion()==rdsRuntimeInformation::RDS_VB20P)
         || (RTI->getSyngoMRVersion()==rdsRuntimeInformation::RDS_VB19A)
         || (RTI->getSyngoMRVersion()==rdsRuntimeInformation::RDS_VB19B)
-        || (RTI->isSyngoVELine()) || (RTI->isSyngoXALine()))
+        || (RTI->isSyngoVELine()) || (RTI->isSyngoXALine()) || (RTI->isSyngoXBLine()))
     {
         opt << "-k";
     }
@@ -918,7 +918,7 @@ bool rdsRaid::createExportList()
 bool rdsRaid::anonymizeCurrentFile()
 {
     // NOTE: On VD11 and newer, the RaidTool does the job for us
-    if ((RTI->isSyngoVDLine()) || (RTI->isSyngoVELine()) || (RTI->isSyngoXALine()))
+    if ((RTI->isSyngoVDLine()) || (RTI->isSyngoVELine()) || (RTI->isSyngoXALine()) || (RTI->isSyngoXBLine()))
     {
         return true;
     }
@@ -942,7 +942,7 @@ bool rdsRaid::anonymizeCurrentFile()
 bool rdsRaid::findAdjustmentScans()
 {
     // NOTE: On VD11+, RaidTool does the job for us
-    if ((RTI->isSyngoVDLine()) || (RTI->isSyngoVELine()) || (RTI->isSyngoXALine()))
+    if ((RTI->isSyngoVDLine()) || (RTI->isSyngoVELine()) || (RTI->isSyngoXALine()) || (RTI->isSyngoXBLine()))
     {
         return true;
     }

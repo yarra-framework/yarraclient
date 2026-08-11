@@ -264,6 +264,7 @@ int rdsRuntimeInformation::determineNumarisXVersion()
             buffer.remove(0,buffer.indexOf("(")+1);
             buffer.truncate(buffer.indexOf("."));
 
+
             if (buffer=="VA10A")
             {
                 detectedVersion=RDS_XA10A;
@@ -337,6 +338,12 @@ int rdsRuntimeInformation::determineNumarisXVersion()
                 detectedVersion=RDS_XA61A;
                 break;
             }
+
+            if (buffer=="NX2501_20251231")
+            {
+                detectedVersion=RDS_XB10A;
+                break;
+            }
         }
     }
 
@@ -352,7 +359,7 @@ QString rdsRuntimeInformation::getSyngoImagerIP()
 
     if ((syngoMRVersion==RDS_VD13A) || (syngoMRVersion==RDS_VD13B) ||
         (syngoMRVersion==RDS_VD13C) || (syngoMRVersion==RDS_VD13D) ||
-        (syngoMRLine==RDS_VE) || (syngoMRLine==RDS_XA))
+        (syngoMRLine==RDS_VE) || (syngoMRLine==RDS_XA) || (syngoMRLine==RDS_XB))
     {
         result=RDS_IMAGER_IP_2;
     }
