@@ -146,6 +146,12 @@ rdsOperationWindow::rdsOperationWindow(QWidget *parent, bool isFirstRun) :
                 iconWindow.showORTOption();
             }
 
+            // Only show the Diagnostics launcher if the Diagnostics tool has been deployed
+            if (QFile::exists(RTI->getAppPath() + "/Diagnostics.exe"))
+            {
+                iconWindow.showDiagnosticsOption();
+            }
+
             iconWindow.show();
 
             if (RTI_NETLOG.isConfigurationError())

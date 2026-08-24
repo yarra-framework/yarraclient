@@ -48,6 +48,7 @@ rdsIconWindow::rdsIconWindow(QWidget *parent) :
     showCloudWindowEntry=false;
     showFileExplorerEntry=false;
     showORTEntry=false;
+    showDiagnosticsEntry=false;
     error=false;
 }
 
@@ -67,6 +68,12 @@ void rdsIconWindow::showCloudWindowOption()
 void rdsIconWindow::showFileExplorerOption()
 {
     showFileExplorerEntry=true;
+}
+
+
+void rdsIconWindow::showDiagnosticsOption()
+{
+    showDiagnosticsEntry=true;
 }
 
 
@@ -129,6 +136,12 @@ void rdsIconWindow::mouseReleaseEvent(QMouseEvent *event)
             infoMenu.addAction(icon,"Offline Reconstruction Task...",this,SLOT(startORTClient()));
         }
 
+        if (showDiagnosticsEntry)
+        {
+            QIcon icon = DIAG_ICON_MENU;
+            infoMenu.addAction(icon,"Diagnostics...",this,SLOT(startDiagnostics()));
+        }
+
         QPalette p = palette();
         p.setColor(QPalette::Background, QColor(0,0,0));
         p.setColor(QPalette::Window, QColor(0, 0, 0));
@@ -170,6 +183,13 @@ void rdsIconWindow::showFileExplorer()
 void rdsIconWindow::startORTClient()
 {
     QString cmd=qApp->applicationDirPath() + "/ORT.exe";
+    QProcess::startDetached(cmd);
+}
+
+
+void rdsIconWindow::startDiagnostics()
+{
+    QString cmd=qApp->applicationDirPath() + "/Diagnostics.exe";
     QProcess::startDetached(cmd);
 }
 

@@ -51,6 +51,7 @@ public:
     void showORTOption();
     void showCloudWindowOption();
     void showFileExplorerOption();
+    void showDiagnosticsOption();
 
 private:
     Ui::rdsIconWindow* ui;
@@ -65,6 +66,7 @@ private:
     bool    showCloudWindowEntry;
     bool    showORTEntry;
     bool    showFileExplorerEntry;
+    bool    showDiagnosticsEntry;
 
 private slots:
     void showStatusWindow();
@@ -73,6 +75,7 @@ private slots:
     void startORTClient();
     void runStartupCommands();
     void triggerTransferNow();
+    void startDiagnostics();
 
 };
 

@@ -84,6 +84,7 @@
 #define ORT_ICON_MENU QIcon(":/images/orticon.png")
 #define YCA_ICON_MENU QIcon(":/images/ycaicon.png")
 #define CMD_ICON_MENU QIcon(":/images/startupicon.png")
+#define DIAG_ICON_MENU QIcon(":/images/diagicon.png")
 
 #define RTI rdsRuntimeInformation::getInstance()
 #define RTI_CONFIG  rdsRuntimeInformation::getInstance()->getConfigInstance()

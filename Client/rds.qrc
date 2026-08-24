@@ -9,5 +9,6 @@
         <file>images/orticon.png</file>
         <file>images/ycaicon.png</file>
         <file>images/startupicon.png</file>
+        <file>images/diagicon.png</file>
     </qresource>
 </RCC>
