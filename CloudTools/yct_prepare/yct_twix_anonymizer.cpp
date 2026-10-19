@@ -925,7 +925,7 @@ bool yctTWIXAnonymizer::checkVersionString(QString versionString)
         "syngo MR D13",
         "syngo MR D11",
         "syngo MR B19",
-        "syngo MR B17"
+        "syngo MR B17",
         // Special software versions of the Biograph mMR (for E11, the P has been dropped)
         "syngo MR B20P",
         "syngo MR B18P",
